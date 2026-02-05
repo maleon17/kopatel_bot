@@ -1,51 +1,146 @@
 import telebot
 from telebot import types
-from config import *
-from monitor import start_monitor
-from parser import DB
-from logger import log
+from config import BOT_TOKEN
+from parser import add_user, user_exists
 
 bot = telebot.TeleBot(BOT_TOKEN)
-db = DB(bot)
 
-start_monitor()
+# FSM
+states = {}
+
+WAIT_NICK = "nick"
+WAIT_FACTION = "faction"
+WAIT_KIT = "kit"
+WAIT_CONFIRM = "confirm"
+
+temp = {}
+
+
+# ───────── keyboards ─────────
+
+def main_menu():
+    kb = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    kb.add("🎮 Подать заявку")
+    kb.add("📥 Скачать сборку", "ℹ️ Информация")
+    return kb
+
+
+def faction_kb():
+    kb = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    kb.row("🔴 Красные", "🔵 Синие")
+    return kb
+
+
+def kit_kb():
+    kb = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    kb.add(
+        "🪖 Воин",
+        "🎯 Снайпер",
+        "🛠 Инженер",
+        "🚁 Оператор БПЛА",
+        "👨‍⚕️ Медик"
+    )
+    return kb
+
+
+def confirm_kb():
+    kb = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    kb.row("Да ✅", "Выбрать заново ❌")
+    return kb
+
+
+# ───────── /start ─────────
 
 @bot.message_handler(commands=["start"])
 def start(m):
-    kb = types.InlineKeyboardMarkup()
-    kb.add(types.InlineKeyboardButton("⬇ Скачать сборку", url=MODPACK_URL))
-    kb.add(types.InlineKeyboardButton("Начать регистрацию", callback_data="reg"))
+    if user_exists(m.from_user.id):
+        bot.send_message(m.chat.id, "Вы уже зарегистрированы.")
+        return
 
-    bot.send_message(m.chat.id, "Добро пожаловать.", reply_markup=kb)
+    states[m.from_user.id] = WAIT_NICK
 
-@bot.callback_query_handler(func=lambda c: c.data == "reg")
-def register(call):
-    msg = bot.send_message(call.message.chat.id, "Введи ник Minecraft:")
-    bot.register_next_step_handler(msg, get_nick)
+    bot.send_message(
+        m.chat.id,
+        "🛰 Первичный допуск\n======================\nВведите Minecraft ник (3–16 символов, без пробелов)"
+    )
 
-def get_nick(m):
-    nick = m.text.strip()
-    bot.send_message(m.chat.id, "Выбери фракцию: RED / BLUE")
-    bot.register_next_step_handler(m, lambda x: get_faction(x, nick))
 
-def get_faction(m, nick):
-    faction = m.text.upper()
-    bot.send_message(m.chat.id, "Выбери kit:")
-    bot.register_next_step_handler(m, lambda x: get_kit(x, nick, faction))
+# ───────── TEXT HANDLER ─────────
 
-def get_kit(m, nick, faction):
-    kit = m.text.upper()
-    tg_id = m.from_user.id
+@bot.message_handler(content_types=["text"])
+def handler(m):
+    uid = m.from_user.id
+    text = m.text
 
-    db.add_profile(tg_id, nick, faction, kit)
-    db.add_whitelist(tg_id, nick)
+    if uid not in states:
+        return
 
-    # future minecraft hooks
-    # db.mc_whitelist(nick)
-    # db.mc_assign_team(nick, faction)
-    # db.mc_assign_kit(nick, kit)
+    # ─ Nick
+    if states[uid] == WAIT_NICK:
+        if not text.isalnum() or not (3 <= len(text) <= 16):
+            bot.send_message(m.chat.id, "❌ Неверный ник.")
+            return
 
-    bot.send_message(m.chat.id, "Готово. Ты зарегистрирован.")
-    log(f"REGISTER {tg_id} {nick}")
+        temp[uid] = {"nick": text}
+        states[uid] = WAIT_FACTION
 
-bot.infinity_polling()
+        bot.send_message(m.chat.id, "Выберите фракцию:", reply_markup=faction_kb())
+        return
+
+    # ─ Faction
+    if states[uid] == WAIT_FACTION:
+        if text not in ["🔴 Красные", "🔵 Синие"]:
+            return
+
+        temp[uid]["faction"] = text
+        states[uid] = WAIT_KIT
+
+        bot.send_message(m.chat.id, "Выберите свой kit:", reply_markup=kit_kb())
+        return
+
+    # ─ Kit
+    if states[uid] == WAIT_KIT:
+        temp[uid]["kit"] = text
+        states[uid] = WAIT_CONFIRM
+
+        bot.send_message(
+            m.chat.id,
+            f'{temp[uid]["nick"]}, Вы выбрали фракцию "{temp[uid]["faction"]}" и kit "{temp[uid]["kit"]}".\nВы уверены?',
+            reply_markup=confirm_kb()
+        )
+        return
+
+    # ─ Confirm
+    if states[uid] == WAIT_CONFIRM:
+
+        if text == "Выбрать заново ❌":
+            states[uid] = WAIT_NICK
+            temp.pop(uid, None)
+            bot.send_message(m.chat.id, "Введите Minecraft ник:")
+            return
+
+        if text == "Да ✅":
+
+            username = m.from_user.username or "unknown"
+
+            user = {
+                "telegram_id": uid,
+                "telegram_username": username,
+                "minecraft_nick": temp[uid]["nick"],
+                "faction": temp[uid]["faction"],
+                "kit": temp[uid]["kit"]
+            }
+
+            add_user(user)
+
+            # 👇 HERE MC WHITELIST
+            # add_to_whitelist(user)
+
+            states.pop(uid)
+            temp.pop(uid)
+
+            bot.send_message(m.chat.id, "✅ Заявка принята.")
+            return
+
+
+bot.infinity_polling(skip_pending=True)
