@@ -20,6 +20,24 @@ temp = {}
 
 # ───────── keyboards ─────────
 
+def post_whitelist(bot, chat_id, user):
+    msg = bot.send_message(
+        chat_id,
+        f'@{user["username"] or "unknown"} (tg://user?id={user["telegram_id"]}) {user["minecraft_nick"]}',
+        message_thread_id=WHITELIST_TOPIC_ID
+    )
+    return msg.message_id
+
+
+def post_banlist(bot, chat_id, user):
+    msg = bot.send_message(
+        chat_id,
+        f'@{user["username"] or "unknown"} (tg://user?id={user["telegram_id"]}) {user["minecraft_nick"]}',
+        message_thread_id=BANLIST_TOPIC_ID
+    )
+    return msg.message_id
+
+
 def main_menu():
     kb = types.ReplyKeyboardMarkup(resize_keyboard=True)
     kb.add("🎮 Подать заявку")
@@ -75,7 +93,6 @@ def start(m):
 
 @bot.message_handler(commands=["ban"])
 def ban(m):
-
     if m.from_user.id not in ADMINS:
         return
 
@@ -84,17 +101,20 @@ def ban(m):
         return
 
     target = m.reply_to_message.from_user.id
-
     user = get_user(target)
 
     if not user:
         bot.send_message(m.chat.id, "Игрок не найден.")
         return
 
-    ban_user(user)
+    # удаляем из whitelist
+    if "message_id" in user:
+        bot.delete_message(chat_id=GROUP_ID, message_id=user["message_id"])
 
-    # 👇 HERE MC BAN
-    # mc_ban(user["minecraft_nick"])
+    ban_user(user)  # сохраняем в базу
+
+    # отправляем в banlist
+    message_id = post_banlist(bot, GROUP_ID, user)
 
     bot.send_message(m.chat.id, f'🚫 {user["minecraft_nick"]} забанен.')
 
@@ -102,18 +122,41 @@ def ban(m):
 
 @bot.message_handler(commands=["unban"])
 def unban(m):
-
     if m.from_user.id not in ADMINS:
+        bot.reply_to(m, "❌ У вас нет прав.")
         return
 
-    parts = m.text.split()
+    # Определяем кого разбаниваем
+    if m.reply_to_message:
+        target_id = m.reply_to_message.from_user.id
+        user = parser.get_user(target_id)  # из parser.py
+    else:
+        args = m.text.split()
+        if len(args) < 2:
+            bot.reply_to(m, "Используйте: /unban <MinecraftNick>")
+            return
+        user = parser.get_user_by_minecraft(args[1])
 
-    if len(parts) != 2:
-        bot.send_message(m.chat.id, "/unban <telegram_id>")
+    if not user or not parser.is_banned(user):
+        bot.reply_to(m, "❌ Этот игрок не забанен.")
         return
 
-    unban_user(int(parts[1]))
-    bot.send_message(m.chat.id, "♻ Разбан выполнен.")
+    # удаляем из banlist
+    if "message_id" in user:
+        try:
+            bot.delete_message(chat_id=GROUP_ID, message_id=user["message_id"])
+        except Exception as e:
+            print(f"Ошибка при удалении из banlist: {e}")
+
+    # разбан в базе
+    parser.unban_user(user)
+
+    # добавляем обратно в whitelist
+    message_id = post_whitelist(bot, GROUP_ID, user)
+    user["message_id"] = message_id
+    parser.update_user(user)  # обновляем message_id в базе
+
+    bot.reply_to(m, f"✅ {user['minecraft_nick']} разбанен и добавлен обратно в whitelist.")
 
 # ───────── TEXT HANDLER ─────────
 
