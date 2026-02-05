@@ -1,14 +1,14 @@
 import telebot
 from telebot import types
 from config import *
-from flask import keep_alive
+from monitor import start_monitor
 from parser import DB
 from logger import log
 
 bot = telebot.TeleBot(BOT_TOKEN)
 db = DB(bot)
 
-keep_alive()
+start_monitor()
 
 @bot.message_handler(commands=["start"])
 def start(m):
