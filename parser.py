@@ -1,45 +1,24 @@
 import json
-from config import *
-from logger import log
 
-class DB:
+DB_FILE = "base.jsonc"
 
-    def __init__(self, bot):
-        self.bot = bot
-        self.cache = self.load_local()
 
-    def load_local(self):
-        with open("base.jsonc", "r") as f:
-            return json.load(f)
+def load_db():
+    with open(DB_FILE, "r", encoding="utf8") as f:
+        return json.load(f)
 
-    def save_local(self):
-        with open("base.jsonc", "w") as f:
-            json.dump(self.cache, f, indent=2)
 
-    # ========= TELEGRAM STORAGE =========
+def save_db(data):
+    with open(DB_FILE, "w", encoding="utf8") as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
 
-    def add_whitelist(self, tg_id, nick):
-        text = f"{tg_id}|{nick}"
-        self.bot.send_message(DB_GROUP_ID, text, message_thread_id=WHITELIST_TOPIC)
 
-    def add_ban(self, tg_id, nick):
-        text = f"{tg_id}|{nick}"
-        self.bot.send_message(DB_GROUP_ID, text, message_thread_id=BANLIST_TOPIC)
+def add_user(user):
+    db = load_db()
+    db["users"].append(user)
+    save_db(db)
 
-    def add_profile(self, tg_id, nick, faction, kit):
-        text = f"{tg_id}|{nick}|{faction}|{kit}"
-        self.bot.send_message(DB_GROUP_ID, text, message_thread_id=PROFILES_TOPIC)
 
-    # ========= FUTURE MINECRAFT =========
-
-    def mc_whitelist(self, nick):
-        pass  # RCON
-
-    def mc_ban(self, nick):
-        pass
-
-    def mc_assign_team(self, nick, faction):
-        pass
-
-    def mc_assign_kit(self, nick, kit):
-        pass
+def user_exists(tg_id):
+    db = load_db()
+    return any(u["telegram_id"] == tg_id for u in db["users"])
