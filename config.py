@@ -9,8 +9,10 @@ BANLIST_TOPIC = 3
 PROFILES_TOPIC = 6
 
 # Admin TG IDs
-slastica = 2091726116
-maleon17 = 8480261623
+ADMINS = [
+    2091726116
+    8480261623
+]
 
 # Google Drive build link
 MODPACK_URL = "https://drive.google.com/..."
