@@ -98,6 +98,23 @@ def ban(m):
 
     bot.send_message(m.chat.id, f'🚫 {user["minecraft_nick"]} забанен.')
 
+# ────────── /unban ──────────
+
+@bot.message_handler(commands=["unban"])
+def unban(m):
+
+    if m.from_user.id not in ADMINS:
+        return
+
+    parts = m.text.split()
+
+    if len(parts) != 2:
+        bot.send_message(m.chat.id, "/unban <telegram_id>")
+        return
+
+    unban_user(int(parts[1]))
+    bot.send_message(m.chat.id, "♻ Разбан выполнен.")
+
 # ───────── TEXT HANDLER ─────────
 
 @bot.message_handler(content_types=["text"])
