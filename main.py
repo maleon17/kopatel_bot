@@ -2,6 +2,8 @@ import telebot
 from telebot import types
 from config import BOT_TOKEN
 from parser import add_user, user_exists
+from parser import add_user, user_exists, is_banned, ban_user, get_user, unban_user
+from config import ADMINS
 
 bot = telebot.TeleBot(BOT_TOKEN)
 
@@ -53,6 +55,11 @@ def confirm_kb():
 
 @bot.message_handler(commands=["start"])
 def start(m):
+
+    if is_banned(m.from_user.id):
+        bot.send_message(m.chat.id, "🚫 Вам запрещён доступ.")
+        return
+
     if user_exists(m.from_user.id):
         bot.send_message(m.chat.id, "Вы уже зарегистрированы.")
         return
@@ -64,6 +71,32 @@ def start(m):
         "🛰 Первичный допуск\n======================\nВведите Minecraft ник (3–16 символов, без пробелов)"
     )
 
+# ────────── /ban ──────────
+
+@bot.message_handler(commands=["ban"])
+def ban(m):
+
+    if m.from_user.id not in ADMINS:
+        return
+
+    if not m.reply_to_message:
+        bot.send_message(m.chat.id, "Ответь командой на сообщение игрока.")
+        return
+
+    target = m.reply_to_message.from_user.id
+
+    user = get_user(target)
+
+    if not user:
+        bot.send_message(m.chat.id, "Игрок не найден.")
+        return
+
+    ban_user(user)
+
+    # 👇 HERE MC BAN
+    # mc_ban(user["minecraft_nick"])
+
+    bot.send_message(m.chat.id, f'🚫 {user["minecraft_nick"]} забанен.')
 
 # ───────── TEXT HANDLER ─────────
 
@@ -79,6 +112,8 @@ def handler(m):
     if states[uid] == WAIT_NICK:
         if not text.isalnum() or not (3 <= len(text) <= 16):
             bot.send_message(m.chat.id, "❌ Неверный ник.")
+
+
             return
 
         temp[uid] = {"nick": text}
