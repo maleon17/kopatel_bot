@@ -55,3 +55,26 @@ def unban_user(tg_id):
 def is_banned(tg_id):
     u = get_user(tg_id)
     return u and u.get("banned", False)
+
+def find_user(value):
+    db = load_db()
+
+    value = str(value).lower()
+
+    for u in db["users"]:
+        if (
+            str(u["telegram_id"]) == value
+            or u["minecraft"].lower() == value
+            or (u["username"] and u["username"].lower() == value)
+        ):
+            return u
+
+    for b in db["bans"]:
+        if (
+            str(b["telegram_id"]) == value
+            or b["minecraft"].lower() == value
+            or (b["username"] and b["username"].lower() == value)
+        ):
+            return b
+
+    return None
