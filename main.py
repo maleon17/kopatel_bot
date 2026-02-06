@@ -76,6 +76,8 @@ def unban(message):
 
 @bot.message_handler(func=lambda m: True)
 def flow(message):
+    chat_id = message.chat.id 
+    user_id = message.from_user.id
     uid = message.from_user.id
 
     if parser.is_banned(uid):
