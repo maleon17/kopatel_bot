@@ -14,6 +14,11 @@ def save_db(data):
     with open(DB_FILE, "w", encoding="utf8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
 
+def add_user(user):
+    """Добавляет нового пользователя в базу данных"""
+    db = load_db()
+    db.setdefault("users", []).append(user)
+    save_db(db)
 
 def find_user(value):
     """
