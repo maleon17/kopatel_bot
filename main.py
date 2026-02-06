@@ -23,56 +23,52 @@ def start(message):
     bot.send_message(message.chat.id,
         "🛰 Первичный допуск\n======================\nВведите Minecraft ник (3–16 символов, без пробелов)")
 
-#-------------ban-------------
 
+# ---------------- BAN ----------------
 @bot.message_handler(commands=["ban"])
-def ban(message):
+def cmd_ban(message):
     if message.from_user.id not in ADMINS:
-        bot.reply_to(message, "⛔ Нет прав")
+        bot.reply_to(message, "❌ У вас нет прав для этой команды.")
         return
 
-    parts = message.text.split(maxsplit=1)
-    if len(parts) < 2:
-        bot.reply_to(message, "Использование: /ban <id|username|minecraft>")
+    args = message.text.split(maxsplit=1)
+    if len(args) < 2:
+        bot.reply_to(message, "⚠ Использование: /ban <id|username|minecraft>")
         return
 
-    target = parts[1].replace("@", "")
-
-    user = parser.find_user(target)
-
+    target = args[1].strip()
+    user = find_user(target)
     if not user:
-        bot.reply_to(message, "❌ Пользователь не найден")
+        bot.reply_to(message, f"⚠ Пользователь '{target}' не найден.")
         return
 
-    parser.ban_user(user)
+    if ban_user(target):
+        bot.reply_to(message, f"✅ Пользователь {user.get('username') or user.get('minecraft') or user['telegram_id']} забанен.")
+    else:
+        bot.reply_to(message, "❌ Не удалось забанить пользователя.")
 
-    bot.reply_to(message, f"🔨 Забанен: {user['minecraft']}")
-
-#-------------unban-------------
-
+# ---------------- UNBAN ----------------
 @bot.message_handler(commands=["unban"])
-def unban(message):
+def cmd_unban(message):
     if message.from_user.id not in ADMINS:
-        bot.reply_to(message, "⛔ Нет прав")
+        bot.reply_to(message, "❌ У вас нет прав для этой команды.")
         return
 
-    parts = message.text.split(maxsplit=1)
-    if len(parts) < 2:
-        bot.reply_to(message, "Использование: /unban <id|username|minecraft>")
+    args = message.text.split(maxsplit=1)
+    if len(args) < 2:
+        bot.reply_to(message, "⚠ Использование: /unban <id|username|minecraft>")
         return
 
-    target = parts[1].replace("@", "")
-
-    user = parser.find_user(target)
-
+    target = args[1].strip()
+    user = find_user(target)
     if not user:
-        bot.reply_to(message, "❌ Не найден")
+        bot.reply_to(message, f"⚠ Пользователь '{target}' не найден.")
         return
 
-    parser.unban_user(user["telegram_id"])
-
-    bot.reply_to(message, f"✅ Разбанен: {user['minecraft']}")
-
+    if unban_user(target):
+        bot.reply_to(message, f"✅ Пользователь {user.get('username') or user.get('minecraft') or user['telegram_id']} разбанен.")
+    else:
+        bot.reply_to(message, "❌ Не удалось разбанить пользователя.")
 
 
 @bot.message_handler(func=lambda m: True)
