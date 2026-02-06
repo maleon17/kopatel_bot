@@ -22,33 +22,56 @@ def start(message):
     bot.send_message(message.chat.id,
         "🛰 Первичный допуск\n======================\nВведите Minecraft ник (3–16 символов, без пробелов)")
 
+#-------------ban-------------
 
 @bot.message_handler(commands=["ban"])
 def ban(message):
     if message.from_user.id not in ADMINS:
+        bot.reply_to(message, "⛔ Нет прав")
         return
 
-    if not message.reply_to_message:
-        bot.reply_to(message, "Ответь на сообщение игрока.")
+    parts = message.text.split(maxsplit=1)
+    if len(parts) < 2:
+        bot.reply_to(message, "Использование: /ban <id|username|minecraft>")
         return
 
-    target = message.reply_to_message.from_user.id
-    parser.ban_user(target)
-    bot.reply_to(message, "🚫 Забанен")
+    target = parts[1].replace("@", "")
 
+    user = parser.find_user(target)
+
+    if not user:
+        bot.reply_to(message, "❌ Пользователь не найден")
+        return
+
+    parser.ban_user(user)
+
+    bot.reply_to(message, f"🔨 Забанен: {user['minecraft']}")
+
+#-------------unban-------------
 
 @bot.message_handler(commands=["unban"])
 def unban(message):
     if message.from_user.id not in ADMINS:
+        bot.reply_to(message, "⛔ Нет прав")
         return
 
-    if not message.reply_to_message:
-        bot.reply_to(message, "Ответь на сообщение игрока.")
+    parts = message.text.split(maxsplit=1)
+    if len(parts) < 2:
+        bot.reply_to(message, "Использование: /unban <id|username|minecraft>")
         return
 
-    target = message.reply_to_message.from_user.id
-    parser.unban_user(target)
-    bot.reply_to(message, "✅ Разбанен")
+    target = parts[1].replace("@", "")
+
+    user = parser.find_user(target)
+
+    if not user:
+        bot.reply_to(message, "❌ Не найден")
+        return
+
+    parser.unban_user(user["telegram_id"])
+
+    bot.reply_to(message, f"✅ Разбанен: {user['minecraft']}")
+
 
 
 @bot.message_handler(func=lambda m: True)
