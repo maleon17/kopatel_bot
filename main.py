@@ -3,6 +3,7 @@ from telebot import types
 from config import BOT_TOKEN, ADMINS, FACTIONS, KITS
 import parser
 from logger import log
+from telebot.types import ReplyKeyboardRemove
 
 bot = telebot.TeleBot(BOT_TOKEN)
 
@@ -123,7 +124,11 @@ def flow(message):
         }
 
         parser.add_user(user)
-        bot.send_message(message.chat.id, "✅ Зарегистрирован.")
+        bot.send_message(
+            chat_id,
+            "✅ Регистрация завершена",
+            reply_markup=ReplyKeyboardRemove()
+        )
         log(f"NEW USER {uid}")
         sessions.pop(uid)
         return
