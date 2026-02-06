@@ -129,48 +129,48 @@ def flow(message):
             reply_markup=kb)
         return
 
-  # подтверждение
-if message.text == "Выбрать заново ❌":
-    sessions.pop(uid)
-    start(message)
-    return
+        # подтверждение
+        if message.text == "Выбрать заново ❌":
+            sessions.pop(uid)
+            start(message)
+            return
+        
+        if message.text == "Да ✅":
+            user = {
+                "telegram_id": uid,
+                "username": message.from_user.username or "unknown",
+                "minecraft": s["nick"],
+                "faction": s["faction"],
+                "kit": s["kit"],
+                "banned": False
+            }
 
-if message.text == "Да ✅":
-    user = {
-        "telegram_id": uid,
-        "username": message.from_user.username or "unknown",
-        "minecraft": s["nick"],
-        "faction": s["faction"],
-        "kit": s["kit"],
-        "banned": False
-    }
+            # Загружаем базу
+            db = parser.load_db()
+        
+            # Проверяем, есть ли уже пользователь
+            exists = False
+            for i, u in enumerate(db["users"]):
+                if u["telegram_id"] == uid:
+                    db["users"][i] = user
+                    exists = True
+                    break
 
-    # Загружаем базу
-    db = parser.load_db()
+            # Если нового пользователя — добавляем
+            if not exists:
+                db["users"].append(user)
 
-    # Проверяем, есть ли уже пользователь
-    exists = False
-    for i, u in enumerate(db["users"]):
-        if u["telegram_id"] == uid:
-            db["users"][i] = user
-            exists = True
-            break
-
-    # Если нового пользователя — добавляем
-    if not exists:
-        db["users"].append(user)
-
-    # Сохраняем базу
-    parser.save_db(db)
-
-    bot.send_message(
-        chat_id,
-        "✅ Регистрация завершена",
-        reply_markup=ReplyKeyboardRemove()
-    )
-    log(f"NEW USER {uid}")
-    sessions.pop(uid)
-    return
+            # Сохраняем базу
+            parser.save_db(db)
+        
+            bot.send_message(
+                chat_id,
+                "✅ Регистрация завершена",
+                reply_markup=ReplyKeyboardRemove()
+            )
+            log(f"NEW USER {uid}")
+            sessions.pop(uid)
+            return
 
 print("BOT STARTED")
 bot.infinity_polling()
