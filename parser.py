@@ -2,82 +2,52 @@ import json
 
 DB_FILE = "base.jsonc"
 
-
 def load_db():
-    """Загружает базу данных из файла"""
     with open(DB_FILE, "r", encoding="utf8") as f:
         return json.load(f)
 
-
 def save_db(data):
-    """Сохраняет базу данных в файл"""
     with open(DB_FILE, "w", encoding="utf8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
 
-def add_user(user):
-    """Добавляет нового пользователя в базу данных"""
-    db = load_db()
-    db.setdefault("users", []).append(user)
-    save_db(db)
-
 def find_user(value):
-    """
-    Ищет пользователя по telegram_id, username или Minecraft нику.
-    Возвращает словарь пользователя или None
-    """
+    """Ищет пользователя по tg_id, username или minecraft нику"""
     db = load_db()
     value = str(value).lower()
 
     for u in db["users"]:
-        if str(u.get("telegram_id", "")).lower() == value \
+        if str(u.get("telegram_id")) == value \
            or (u.get("username") and u["username"].lower() == value) \
            or (u.get("minecraft") and u["minecraft"].lower() == value):
             return u
     return None
 
-
 def ban_user(value):
-    """
-    Бан пользователя по telegram_id, username или Minecraft нику.
-    Добавляет его в db["bans"], если там ещё нет.
-    """
+    """Бан по id / username / minecraft"""
     db = load_db()
     user = find_user(value)
     if not user:
         return False
 
     user["banned"] = True
-
-    # Добавляем в bans, если там ещё нет
-    if not any(b.get("telegram_id") == user.get("telegram_id") for b in db.get("bans", [])):
-        db.setdefault("bans", []).append(user)
-
     save_db(db)
     return True
 
-
 def unban_user(value):
-    """
-    Разбан пользователя по telegram_id, username или Minecraft нику.
-    Удаляет его из db["bans"].
-    """
+    """Разбан по id / username / minecraft"""
     db = load_db()
     user = find_user(value)
     if not user:
         return False
 
     user["banned"] = False
-
-    # Удаляем из bans
-    db["bans"] = [b for b in db.get("bans", []) if b.get("telegram_id") != user.get("telegram_id")]
-
     save_db(db)
     return True
 
-
-def is_banned(value):
-    """
-    Проверяет, забанен ли пользователь по telegram_id, username или Minecraft нику
-    """
-    user = find_user(value)
-    return user.get("banned", False) if user else False
+def is_banned(tg_id):
+    """Проверяет, забанен ли пользователь по telegram_id"""
+    db = load_db()
+    for u in db["users"]:
+        if u.get("telegram_id") == tg_id:
+            return u.get("banned", False)
+    return False
