@@ -48,3 +48,8 @@ def unban_user(value):
     db["bans"] = [b for b in db["bans"] if b["telegram_id"] != user["telegram_id"]]
     save_db(db)
     return True
+
+def is_banned(tg_id):
+    """Проверяет, забанен ли пользователь по telegram_id"""
+    user = get_user(tg_id)
+    return user.get("banned", False) if user else False
