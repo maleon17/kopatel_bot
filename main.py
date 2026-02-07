@@ -197,7 +197,28 @@ def flow(message):
 
         # Сохраняем базу
         parser.save_db(db)
-        
+
+        text = (
+            f"🆔 {uid}\n"
+            f"🎮 {s['nick']}\n"
+            f"👤 @{message.from_user.username}\n"
+            f"🏳 {s['faction']}\n"
+            f"🧰 {s['kit']}\n"
+            f"🚫 banned: false"
+        )
+
+        msg = bot.send_message(MIRROR_GROUP, text)
+
+        db = parser.load_db()
+
+        for u in db["users"]:
+            if u["telegram_id"] == uid:
+                u["mirror_msg"] = msg.message_id
+
+        parser.save_db(db)
+
+
+
         bot.send_message(
             chat_id,
             "✅ Регистрация завершена",
