@@ -23,13 +23,11 @@ def start(message):
     existing = find_user(uid)
 
     if existing:
-        kb = types.ReplyKeyboardMarkup(resize_keyboard=True)
-        kb.row("Начать заново")
         bot.send_message(
             message.chat.id,
             f"Пользователь уже зарегистрирован ❌\n"
             f"Вы выбрали:\nФракция: {existing['faction']}\nKit: {existing['kit']}",
-            reply_markup=kb
+            reply_markup=ReplyKeyboardRemove()
         )
         return
 
@@ -37,6 +35,7 @@ def start(message):
     bot.send_message(
         message.chat.id,
         "🛰 Первичный допуск\n======================\nВведите Minecraft ник (3–16 символов, без пробелов)"
+        reply_markup=ReplyKeyboardRemove()
     )
 
 # ---------------- BAN ----------------
