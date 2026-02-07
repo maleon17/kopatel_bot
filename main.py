@@ -19,6 +19,11 @@ def main_menu(chat):
 
 @bot.message_handler(commands=["start"])
 def start(message):
+
+    # игнорируем группы
+    if message.chat.type != "private":
+        return
+
     uid = message.from_user.id
     existing = find_user(uid)
 
