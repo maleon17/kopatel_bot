@@ -493,5 +493,3 @@ def sync_github_to_local():
 print("BOT STARTED")
 sync_github_to_local()
 bot.infinity_polling()
-
-start_bot()
