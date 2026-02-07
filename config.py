@@ -3,7 +3,7 @@ RCON_HOST = ""
 RCON_PORT = 25575
 RCON_PASSWORD = ""
 
-GITHUB_TOKEN = "ghp_...твой токен..."
+GITHUB_TOKEN =  "ghp-hMVFdGMIFqj8viA6zIMSAueiPfvWGO1DSbtM"
 GITHUB_REPO = "maleon17/kopatel_bot"
 GITHUB_FILE = "base.json"
 
