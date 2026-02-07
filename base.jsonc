@@ -17,6 +17,14 @@
             "kit": "🎯 Снайпер",
             "banned": false,
             "mirror_msg": 14
+        },
+        {
+            "telegram_id": 2091726116,
+            "username": "b_b_e_e_a_a_u_u_t_t_y_y",
+            "minecraft": "slastika",
+            "faction": "🔴 Красные",
+            "kit": "🎯 Снайпер",
+            "banned": false
         }
     ]
 }
