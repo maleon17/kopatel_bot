@@ -7,7 +7,6 @@ from logger import log
 from telebot.types import ReplyKeyboardRemove
 
 bot = telebot.TeleBot(BOT_TOKEN)
-mirror_load_db()
 
 sessions = {}
 
@@ -309,5 +308,6 @@ def mirror_load_db():
     parser.save_db(db)
     print("✅ База восстановлена из зеркала")
 
+mirror_load_db(bot, MIRROR_GROUP)
 print("BOT STARTED")
 bot.infinity_polling()
