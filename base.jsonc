@@ -6,7 +6,7 @@
             "minecraft": "Lox",
             "faction": "🔴 Красные",
             "kit": "🚁 Оператор БПЛА",
-            "banned": false,
+            "banned": true,
             "mirror_msg": 4
         }
     ]
