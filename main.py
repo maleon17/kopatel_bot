@@ -79,7 +79,13 @@ def cmd_ban(message):
         name = user.get("minecraft") or user.get("username") or str(uid)
 
         # --- обновляем сообщение в зеркале ---
-        db = parser.load_db()
+        db = github_load_db()
+        # находим пользователя в базе
+        for u in db["users"]:
+            if u["telegram_id"] == uid:
+                u["banned"] = True
+                user = u 
+                break
         if "mirror_msg" in user and MIRROR_GROUP:
             try:
                 text = (
@@ -131,7 +137,14 @@ def cmd_unban(message):
         name = user.get("minecraft") or user.get("username") or str(uid)
 
         # --- обновляем сообщение в зеркале ---
-        db = parser.load_db()
+        db = github_load_db()
+        # находим пользователя в базе
+        for u in db["users"]:
+            if u["telegram_id"] == uid:
+                u["banned"] = True
+                user = u 
+                break
+
         if "mirror_msg" in user and MIRROR_GROUP:
             try:
                 text = (
@@ -236,13 +249,7 @@ def flow(message):
         }
 
         # Загружаем базу
-        db = github_load_db()  # подгружаем актуальную базу
-        # находим пользователя в базе
-        for u in db["users"]:
-            if u["telegram_id"] == uid:
-                u["banned"] = True  # или False для unban
-         ьь     user = u  # обновляем локальный объект
-                break
+        db = github_load_db()
         
         # Проверяем, есть ли уже пользователь
         exists = False
