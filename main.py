@@ -27,6 +27,7 @@ def main_menu(chat):
 def start(message):
     
     try:
+        sync_github_to_local()
         db = github_load_db()
     except Exception as e:
         print("GitHub load error:", e)
