@@ -7,7 +7,7 @@ import time
 import logging 
 from mcrcon import MCRcon
 from telebot import types
-from config import BOT_TOKEN, ADMINS, FACTIONS, KITS, MIRROR_GROUP
+from config import BOT_TOKEN, ADMINS, FACTIONS, KITS, MIRROR_GROUP, RCON_HOST, RCON_PORT, RCON_PASSWORD
 import parser
 from parser import ban_user, unban_user, find_user, is_banned, add_user
 from logger import log
