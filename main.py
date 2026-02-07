@@ -396,6 +396,5 @@ sync_github_to_local()
 while True:
     try:
         bot.infinity_polling(timeout=60, long_polling_timeout=60)
-    except Exception as e:
-        print("Polling error:", e)
-        time.sleep(5)  # ждём перед повторным подключением
+    except Exception:
+        time.sleep(5)  # просто ждем и переподключаемся
