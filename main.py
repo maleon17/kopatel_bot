@@ -229,7 +229,7 @@ def flow(message):
         }
 
         # Загружаем базу
-        db = parser.load_db()
+        db = github_load_db()
         
         # Проверяем, есть ли уже пользователь
         exists = False
@@ -244,7 +244,7 @@ def flow(message):
             db["users"].append(user)
 
         # Сохраняем базу
-        parser.save_db(db)
+        github_save_db(db, message=f"Update by {message.from_user.username}")
 
         text = (
             f"🆔 {uid}\n"
@@ -257,13 +257,13 @@ def flow(message):
 
         msg = bot.send_message(MIRROR_GROUP, text)
 
-        db = parser.load_db()
+        db = github_load_db()
 
         for u in db["users"]:
             if u["telegram_id"] == uid:
                 u["mirror_msg"] = msg.message_id
 
-        parser.save_db(db)
+        github_save_db(db, message=f"Update by {message.from_user.username}")
 
 
 
