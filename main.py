@@ -52,6 +52,14 @@ def rcon_del_user(nick: str):
     except Exception as e:
         print(f"RCON ERROR: del {nick} -> {e}")
 
+def rcon_whitelist_add(nick):
+    try:
+        with MCRcon(RCON_HOST, RCON_PASSWORD, port=RCON_PORT) as mcr:
+            resp = mcr.command(f"whitelist add {nick}")
+            print(f"RCON: whitelist add {nick} -> {resp}")
+    except Exception as e:
+        print(f"RCON ERROR: whitelist add {nick} ->", e)
+
 # ----------------- RCON PROCESS -------------------
 
 # Очередь команд для процесса
