@@ -114,7 +114,7 @@ def cmd_ban(message):
         uid = user["telegram_id"]
         name = user.get("minecraft") or user.get("username") or str(uid)
         if user.get("minecraft"):
-            rcon_queue.put(("ban" user["minecraft"]))
+            rcon_queue.put(("ban", user["minecraft"]))
 
         # --- обновляем сообщение в зеркале ---
         db = parser.load_db()
@@ -175,7 +175,7 @@ def cmd_unban(message):
         uid = user["telegram_id"]
         name = user.get("minecraft") or user.get("username") or str(uid)
         if user.get("minecraft"):
-            rcon_queue.put(("unban" user["minecraft"]))
+            rcon_queue.put(("unban", user["minecraft"]))
 
 
         # --- обновляем сообщение в зеркале ---
@@ -254,7 +254,7 @@ def cmd_deluser(message):
     github_save_db(db, message=f"DELETE user {uid}")
 
     if user.get("minecraft"):
-        rcon_queue.put(("del" user["minecraft"]))
+        rcon_queue.put(("del", user["minecraft"]))
 
     bot.send_message(
         message.chat.id,
