@@ -141,7 +141,7 @@ def cmd_unban(message):
         # находим пользователя в базе
         for u in db["users"]:
             if u["telegram_id"] == uid:
-                u["banned"] = True
+                u["banned"] = False
                 user = u 
                 break
 
