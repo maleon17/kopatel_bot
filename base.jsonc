@@ -6,7 +6,7 @@
             "minecraft": "UlanaFo",
             "faction": "🔵 Синие",
             "kit": "🪖 Воин",
-            "banned": false,
+            "banned": true,
             "mirror_msg": 5
         }
     ]
