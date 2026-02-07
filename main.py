@@ -310,22 +310,25 @@ def github_load_db():
 def github_save_db(db, message="Update database"):
     url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_FILE}"
     headers = {"Authorization": f"token {GITHUB_TOKEN}"}
-    
-    # Нужно получить SHA файла, если он есть
+
     r = requests.get(url, headers=headers)
     sha = r.json().get("sha") if r.status_code == 200 else None
-    
-    content = base64.b64encode(json.dumps(db, indent=4).encode()).decode()
-    
+
+    # ВАЖНО: ensure_ascii=False + utf-8
+    content = base64.b64encode(
+        json.dumps(db, indent=4, ensure_ascii=False).encode("utf-8")
+    ).decode()
+
     payload = {
         "message": message,
         "content": content
     }
+
     if sha:
         payload["sha"] = sha
-    
+
     r = requests.put(url, headers=headers, json=payload)
-    return r.status_code == 201 or r.status_code == 200
+    return r.status_code in (200, 201)
 
 mirror_load_db()
 print("BOT STARTED")
