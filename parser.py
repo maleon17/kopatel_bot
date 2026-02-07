@@ -71,7 +71,7 @@ def is_banned(tg_id):
             return u.get("banned", False)
     return False
 
-def mirror_load_db():
+def mirror_load_db(bot, mirror group):
     """Считываем все сообщения из группы и создаем базу восстановления"""
     db = {"users": []}
 
