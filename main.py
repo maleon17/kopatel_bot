@@ -31,7 +31,7 @@ def start(message):
         bot.send_message(
             message.chat.id,
             f"Пользователь уже зарегистрирован ❌\n"
-            f"Вы выбрали:\nФракция: {existing['faction']}\nKit: {existing['kit']}",
+            f"{existing['minecraft']}, вы выбрали:\nФракция: {existing['faction']}\nKit: {existing['kit']}",
             reply_markup=ReplyKeyboardRemove()
         )
         return
