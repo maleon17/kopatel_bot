@@ -3,6 +3,7 @@ import sys
 import requests
 import base64
 import json
+import time
 from telebot import types
 from config import BOT_TOKEN, ADMINS, FACTIONS, KITS, MIRROR_GROUP
 import parser
@@ -391,8 +392,6 @@ def sync_github_to_local():
 
 print("BOT STARTED")
 sync_github_to_local()
-
-bot = telebot.TeleBot("YOUR_TOKEN")
 
 while True:
     try:
