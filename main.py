@@ -17,6 +17,37 @@ from telebot.types import ReplyKeyboardRemove
 sys.path.append("/data/data/com.termux/files/home/github_lib")
 from github import GITHUB_TOKEN, GITHUB_REPO, GITHUB_FILE
 
+# -------------- RCON функции ---------------
+
+def rcon_ban(nick):
+    from rcon.source import Client
+    try:
+        with Client(RCON_HOST, RCON_PORT, passwd=RCON_PASSWORD) as client:
+            client.run(f"ban {nick}")
+            print(f"RCON: ban {nick}")
+    except Exception as e:
+        print(f"RCON ERROR: ban {nick} ->", e)
+
+
+def rcon_unban(nick):
+    from rcon.source import Client
+    try:
+        with Client(RCON_HOST, RCON_PORT, passwd=RCON_PASSWORD) as client:
+            client.run(f"pardon {nick}")
+            print(f"RCON: unban {nick}")
+    except Exception as e:
+        print(f"RCON ERROR: unban {nick} ->", e)
+
+
+def rcon_del_user(nick):
+    from rcon.source import Client
+    try:
+        with Client(RCON_HOST, RCON_PORT, passwd=RCON_PASSWORD) as client:
+            client.run(f"whitelist remove {nick}")
+            print(f"RCON: del {nick}")
+    except Exception as e:
+        print(f"RCON ERROR: del {nick} ->", e)
+
 # Очередь для команд RCON
 rcon_queue = queue.Queue()
 
@@ -434,29 +465,6 @@ def sync_github_to_local():
 
     except Exception as e:
         print("GitHub sync failed:", e)
-
-# ------------RCON-----------
-
-def rcon_command(cmd: str) -> bool:
-    """Выполнить команду через RCON, вернуть True если прошло."""
-    try:
-        with MCRcon(RCON_HOST, RCON_PASSWORD, port=RCON_PORT) as mcr:
-            resp = mcr.command(cmd)
-            print(f"RCON: {cmd} -> {resp}")
-        return True
-    except Exception as e:
-        print(f"RCON ERROR: {cmd} -> {e}")
-        return False
-
-def rcon_ban_user(minecraft_nick: str) -> bool:
-    return rcon_command(f"ban {minecraft_nick}")
-
-def rcon_unban_user(minecraft_nick: str) -> bool:
-    return rcon_command(f"pardon {minecraft_nick}")
-
-def rcon_del_user(minecraft_nick: str) -> bool:
-    """Удаляет пользователя из whitelist на сервере (если используешь whitelist)."""
-    return rcon_command(f"whitelist remove {minecraft_nick}")
 
 
 print("BOT STARTED")
