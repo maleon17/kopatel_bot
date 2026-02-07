@@ -1,10 +1,13 @@
 import telebot
+import sys
 from telebot import types
 from config import BOT_TOKEN, ADMINS, FACTIONS, KITS, MIRROR_GROUP
 import parser
 from parser import ban_user, unban_user, find_user, is_banned, add_user
 from logger import log
 from telebot.types import ReplyKeyboardRemove
+sys.path.append("/data/data/com.termux/files/home/github_lib")
+from github import GITHUB_TOKEN, GITHUB_REPO, GITHUB_FILE_PATH
 
 bot = telebot.TeleBot(BOT_TOKEN)
 
