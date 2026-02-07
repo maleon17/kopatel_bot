@@ -79,7 +79,7 @@ def cmd_ban(message):
         name = user.get("minecraft") or user.get("username") or str(uid)
 
         # --- обновляем сообщение в зеркале ---
-        db = github_load_db()
+        db = parser.load_db()
         # находим пользователя в базе
         for u in db["users"]:
             if u["telegram_id"] == uid:
@@ -110,6 +110,7 @@ def cmd_ban(message):
             f'✅ Пользователь <a href="tg://user?id={uid}">{name}</a> забанен.',
             parse_mode="HTML"
         )
+        parser.save_db()
         github_save_db(db, message=f"Update: user {uid} registered/banned/unbanned")
     else:
         bot.reply_to(message, "❌ Не удалось забанить пользователя.")
@@ -137,7 +138,7 @@ def cmd_unban(message):
         name = user.get("minecraft") or user.get("username") or str(uid)
 
         # --- обновляем сообщение в зеркале ---
-        db = github_load_db()
+        db = parser.load_db()
         # находим пользователя в базе
         for u in db["users"]:
             if u["telegram_id"] == uid:
@@ -169,6 +170,7 @@ def cmd_unban(message):
             f'✅ Пользователь <a href="tg://user?id={uid}">{name}</a> разбанен.',
             parse_mode="HTML"
         )
+        parser.save_db()
         github_save_db(db, message=f"Update: user {uid} registered/banned/unbanned")
     else:
         bot.reply_to(message, "❌ Не удалось разбанить пользователя.")
@@ -249,7 +251,7 @@ def flow(message):
         }
 
         # Загружаем базу
-        db = github_load_db()
+        db = parser.load_db()
         
         # Проверяем, есть ли уже пользователь
         exists = False
@@ -264,6 +266,7 @@ def flow(message):
             db["users"].append(user)
 
         # Сохраняем базу
+        parser.save_db()
         github_save_db(db, message=f"Update by {message.from_user.username}")
 
         text = (
@@ -277,7 +280,7 @@ def flow(message):
 
         msg = bot.send_message(MIRROR_GROUP, text)
 
-        db = github_load_db()
+        db = parser.load_db()
 
         for u in db["users"]:
             if u["telegram_id"] == uid:
@@ -330,6 +333,18 @@ def github_save_db(db, message="Update database"):
     r = requests.put(url, headers=headers, json=payload)
     return r.status_code in (200, 201)
 
-mirror_load_db()
+def sync_github_to_local():
+    try:
+        db = github_load_db()
+
+        with open("base.jsonc", "w", encoding="utf8") as f:
+            json.dump(db, f, indent=4, ensure_ascii=False)
+
+        print("GitHub → local DB synced")
+
+    except Exception as e:
+        print("GitHub sync failed:", e)
+
 print("BOT STARTED")
+sync_github_to_local()
 bot.infinity_polling()
