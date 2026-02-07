@@ -391,4 +391,12 @@ def sync_github_to_local():
 
 print("BOT STARTED")
 sync_github_to_local()
-bot.infinity_polling()
+
+bot = telebot.TeleBot("YOUR_TOKEN")
+
+while True:
+    try:
+        bot.infinity_polling(timeout=60, long_polling_timeout=60)
+    except Exception as e:
+        print("Polling error:", e)
+        time.sleep(5)  # ждём перед повторным подключением
