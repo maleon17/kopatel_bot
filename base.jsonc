@@ -33,7 +33,8 @@
             "minecraft": "J0J0Bro",
             "faction": "🔴 Красные",
             "kit": "🎯 Снайпер",
-            "banned": false
+            "banned": false,
+            "mirror_msg": 16
         }
     ]
 }
