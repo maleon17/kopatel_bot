@@ -104,9 +104,9 @@ def cmd_ban(message):
             f'✅ Пользователь <a href="tg://user?id={uid}">{name}</a> забанен.',
             parse_mode="HTML"
         )
+        github_save_db(db, message=f"Update: user {uid} registered/banned/unbanned")
     else:
         bot.reply_to(message, "❌ Не удалось забанить пользователя.")
-
 
 # ---------------- UNBAN ----------------
 @bot.message_handler(commands=["unban"])
@@ -156,6 +156,7 @@ def cmd_unban(message):
             f'✅ Пользователь <a href="tg://user?id={uid}">{name}</a> разбанен.',
             parse_mode="HTML"
         )
+        github_save_db(db, message=f"Update: user {uid} registered/banned/unbanned")
     else:
         bot.reply_to(message, "❌ Не удалось разбанить пользователя.")
 
