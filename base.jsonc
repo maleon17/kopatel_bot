@@ -1,3 +1,12 @@
 {
-    "users": []
+    "users": [
+        {
+            "telegram_id": 8480261623,
+            "username": "maleon17",
+            "minecraft": "Lox",
+            "faction": "🔴 Красные",
+            "kit": "🚁 Оператор БПЛА",
+            "banned": false
+        }
+    ]
 }
