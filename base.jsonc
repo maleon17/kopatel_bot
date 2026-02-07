@@ -1,3 +1,12 @@
 {
-    "users": []
+    "users": [
+        {
+            "telegram_id": 5456440531,
+            "username": "nikd134",
+            "minecraft": "UlanaFo",
+            "faction": "🔵 Синие",
+            "kit": "🪖 Воин",
+            "banned": false
+        }
+    ]
 }
