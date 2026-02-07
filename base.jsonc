@@ -26,6 +26,14 @@
             "kit": "🎯 Снайпер",
             "banned": false,
             "mirror_msg": 15
+        },
+        {
+            "telegram_id": 5339173346,
+            "username": "Cruc1an_carpik",
+            "minecraft": "J0J0Bro",
+            "faction": "🔴 Красные",
+            "kit": "🎯 Снайпер",
+            "banned": false
         }
     ]
 }
