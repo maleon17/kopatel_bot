@@ -106,5 +106,5 @@ def mirror_load_db():
     except Exception as e:
         print("Mirror load error:", e)
 
-    parser.save_db(db)
+    save_db(db)
     print("✅ База восстановлена из зеркала")
