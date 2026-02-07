@@ -236,7 +236,13 @@ def flow(message):
         }
 
         # Загружаем базу
-        db = github_load_db()
+        db = github_load_db()  # подгружаем актуальную базу
+        # находим пользователя в базе
+        for u in db["users"]:
+            if u["telegram_id"] == uid:
+                u["banned"] = True  # или False для unban
+         ьь     user = u  # обновляем локальный объект
+                break
         
         # Проверяем, есть ли уже пользователь
         exists = False
