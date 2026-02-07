@@ -15,7 +15,7 @@
             "minecraft": "maleon17",
             "faction": "🔵 Синие",
             "kit": "🎯 Снайпер",
-            "banned": false,
+            "banned": true,
             "mirror_msg": 9
         }
     ]
