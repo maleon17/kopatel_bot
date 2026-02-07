@@ -4,6 +4,7 @@ import requests
 import base64
 import json
 import time
+import logging 
 from telebot import types
 from config import BOT_TOKEN, ADMINS, FACTIONS, KITS, MIRROR_GROUP
 import parser
@@ -392,6 +393,8 @@ def sync_github_to_local():
 
 print("BOT STARTED")
 sync_github_to_local()
+
+logging.getLogger("telebot").setLevel(logging.CRITICAL)  # глушим internal лог
 
 while True:
     try:
