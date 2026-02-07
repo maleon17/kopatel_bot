@@ -391,17 +391,24 @@ def sync_github_to_local():
     except Exception as e:
         print("GitHub sync failed:", e)
 
+def start_bot():
+    try:
+        while True:
+            try:
+                # Запускаем polling
+                bot.polling(non_stop=True, timeout=60)
+            except Exception as e:
+                # Логируем ошибки (например 409 или сетевые)
+                print("Bot error:", e)
+                time.sleep(5)  # Ждём перед повтором
+    except KeyboardInterrupt:
+        # Ctrl+C
+        print("\nBot stopped by user.")
+        return
+
 print("BOT STARTED")
 sync_github_to_local()
 
 logging.getLogger("telebot").setLevel(logging.CRITICAL)  # глушим internal лог
 
-while True:
-    try:
-        bot.polling(non_stop=True, timeout=60, long_polling_timeout=60)
-    except KeyboardInterrupt:
-        print("Бот остановлен вручную")
-        break
-    except Exception:
-        # при разрывах сети просто ждём 5 секунд и переподключаемся
-        time.sleep(5)
+start_bot()
