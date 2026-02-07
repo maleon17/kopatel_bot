@@ -7,6 +7,7 @@ import time
 import logging 
 import queue
 import threading
+import multiprocessing 
 from mcrcon import MCRcon
 from telebot import types
 from config import BOT_TOKEN, ADMINS, FACTIONS, KITS, MIRROR_GROUP, RCON_HOST, RCON_PORT, RCON_PASSWORD
@@ -51,6 +52,52 @@ def rcon_del_user(nick: str):
     except Exception as e:
         print(f"RCON ERROR: del {nick} -> {e}")
 
+# ----------------- RCON PROCESS -------------------
+
+# Очередь команд для процесса
+rcon_queue = multiprocessing.Queue()
+
+def rcon_process_worker(queue, host, port, password):
+    """Процесс для выполнения команд RCON"""
+    while True:
+        cmd = queue.get()
+        if cmd is None:  # сигнал для завершения процесса
+            break
+        try:
+            action, nick = cmd
+            if not nick:
+                continue
+            with MCRcon(host, password, port=port) as mcr:
+                if action == "ban":
+                    resp = mcr.command(f"ban {nick}")
+                    print(f"RCON: ban {nick} -> {resp}")
+                elif action == "unban":
+                    resp = mcr.command(f"pardon {nick}")
+                    print(f"RCON: unban {nick} -> {resp}")
+                elif action == "del":
+                    resp = mcr.command(f"whitelist remove {nick}")
+                    print(f"RCON: del {nick} -> {resp}")
+        except Exception as e:
+            print("RCON ERROR:", e)
+
+# Запуск процесса один раз при старте бота
+rcon_process = multiprocessing.Process(
+    target=rcon_process_worker, 
+    args=(rcon_queue, RCON_HOST, RCON_PORT, RCON_PASSWORD),
+    daemon=True
+)
+rcon_process.start()
+
+# --------- Функции для добавления команд ---------
+
+def rcon_ban(nick):
+    rcon_queue.put(("ban", nick))
+
+def rcon_unban(nick):
+    rcon_queue.put(("unban", nick))
+
+def rcon_del_user(nick):
+    rcon_queue.put(("del", nick))
 
 def main_menu(chat):
     kb = types.ReplyKeyboardMarkup(resize_keyboard=True)
