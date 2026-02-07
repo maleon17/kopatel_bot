@@ -308,6 +308,6 @@ def mirror_load_db():
     parser.save_db(db)
     print("✅ База восстановлена из зеркала")
 
-mirror_load_db(bot, MIRROR_GROUP)
+mirror_load_db()
 print("BOT STARTED")
 bot.infinity_polling()
