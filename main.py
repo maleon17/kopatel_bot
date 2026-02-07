@@ -407,7 +407,7 @@ def flow(message):
             db["users"].append(user)
 
         if user.get("minecraft"):
-            rcon_command(f"whitelist add {user['minecraft']}")
+            rcon_whitelist_add(user["minecraft"])
 
         # Сохраняем базу
         parser.save_db(db)
@@ -432,7 +432,6 @@ def flow(message):
 
         parser.save_db(db)
         github_save_db(db, message=f"Update by {message.from_user.username}")
-
 
 
         bot.send_message(
