@@ -7,7 +7,7 @@ from logger import log
 from telebot.types import ReplyKeyboardRemove
 
 bot = telebot.TeleBot(BOT_TOKEN)
-mirror_load_db():
+mirror_load_db()
 
 sessions = {}
 
