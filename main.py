@@ -175,6 +175,48 @@ def cmd_unban(message):
     else:
         bot.reply_to(message, "❌ Не удалось разбанить пользователя.")
 
+# ---------------- DEL USER ----------------
+@bot.message_handler(commands=["deluser"])
+def cmd_deluser(message):
+    if message.from_user.id not in ADMINS:
+        bot.reply_to(message, "❌ У вас нет прав.")
+        return
+
+    args = message.text.split(maxsplit=1)
+    if len(args) < 2:
+        bot.reply_to(message, "⚠ Использование: /deluser <id|username|minecraft>")
+        return
+
+    target = args[1].strip()
+    user = find_user(target)
+
+    if not user:
+        bot.reply_to(message, "❌ Пользователь не найден.")
+        return
+
+    uid = user["telegram_id"]
+    name = user.get("minecraft") or user.get("username") or str(uid)
+
+    db = parser.load_db()
+
+    # --- удаляем mirror сообщение ---
+    if "mirror_msg" in user and MIRROR_GROUP:
+        try:
+            bot.delete_message(MIRROR_GROUP, user["mirror_msg"])
+        except Exception as e:
+            print("Mirror delete error:", e)
+
+    # --- удаляем из локальной базы ---
+    db["users"] = [u for u in db["users"] if u["telegram_id"] != uid]
+
+    parser.save_db(db)
+    github_save_db(db, message=f"DELETE user {uid}")
+
+    bot.send_message(
+        message.chat.id,
+        f'🗑 Пользователь <a href="tg://user?id={uid}">{name}</a> полностью удалён.',
+        parse_mode="HTML"
+    )
 
 @bot.message_handler(func=lambda m: True)
 def flow(message):
