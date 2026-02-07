@@ -25,7 +25,13 @@ def main_menu(chat):
 
 @bot.message_handler(commands=["start"])
 def start(message):
-
+    
+    try:
+        db = github_load_db()
+    except Exception as e:
+        print("GitHub load error:", e)
+        db = {"users": []}
+    
     # игнорируем группы
     if message.chat.type != "private":
         return
