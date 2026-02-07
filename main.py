@@ -19,10 +19,25 @@ def main_menu(chat):
 
 @bot.message_handler(commands=["start"])
 def start(message):
-    sessions[message.from_user.id] = {}
-    bot.send_message(message.chat.id,
-        "🛰 Первичный допуск\n======================\nВведите Minecraft ник (3–16 символов, без пробелов)")
+    uid = message.from_user.id
+    existing = find_user(uid)
 
+    if existing:
+        kb = types.ReplyKeyboardMarkup(resize_keyboard=True)
+        kb.row("Начать заново")
+        bot.send_message(
+            message.chat.id,
+            f"Пользователь уже зарегистрирован ❌\n"
+            f"Вы выбрали:\nФракция: {existing['faction']}\nKit: {existing['kit']}",
+            reply_markup=kb
+        )
+        return
+
+    sessions[uid] = {}
+    bot.send_message(
+        message.chat.id,
+        "🛰 Первичный допуск\n======================\nВведите Minecraft ник (3–16 символов, без пробелов)"
+    )
 
 # ---------------- BAN ----------------
 @bot.message_handler(commands=["ban"])
