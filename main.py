@@ -62,7 +62,15 @@ def cmd_ban(message):
         return
 
     if ban_user(target):
-        bot.reply_to(message, f"✅ Пользователь {user.get('minecraft') or user.get('username') or user['telegram_id']} забанен.")
+
+        name = user.get("minecraft") or user.get("username") or str(user["telegram_id"])
+        uid = user["telegram_id"]
+
+        bot.send_message(
+            message.chat.id,
+            f'✅ Пользователь <a href="tg://user?id={uid}">{name}</a> забанен.',
+            parse_mode="HTML"
+        )
     else:
         bot.reply_to(message, "❌ Не удалось забанить пользователя.")
 
@@ -85,7 +93,15 @@ def cmd_unban(message):
         return
 
     if unban_user(target):
-        bot.reply_to(message, f"✅ Пользователь {user.get('minectaft') or user.get('username') or user['telegram_id']} разбанен.")
+
+        name = user.get("minecraft") or user.get("username") or str(user["telegram_id"])
+        uid = user["telegram_id"]
+
+        bot.send_message(
+            message.chat.id,
+            f'✅ Пользователь <a href="tg://user?id={uid}">{name}</a> разбанен.',
+            parse_mode="HTML"
+        )
     else:
         bot.reply_to(message, "❌ Не удалось разбанить пользователя.")
 
