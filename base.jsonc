@@ -8,15 +8,6 @@
             "kit": "🪖 Воин",
             "banned": false,
             "mirror_msg": 5
-        },
-        {
-            "telegram_id": 8480261623,
-            "username": "maleon17",
-            "minecraft": "maleon17",
-            "faction": "🔵 Синие",
-            "kit": "🎯 Снайпер",
-            "banned": false,
-            "mirror_msg": 12
         }
     ]
 }
