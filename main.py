@@ -110,6 +110,9 @@ def rcon_unban(nick):
 def rcon_del_user(nick):
     rcon_queue.put(("del", nick))
 
+def rcon_whitelist_add(nick):
+    rcon_queue.put(("whitelist", nick))
+
 def main_menu(chat):
     kb = types.ReplyKeyboardMarkup(resize_keyboard=True)
     kb.add("Начать заново")
