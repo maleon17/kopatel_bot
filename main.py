@@ -404,7 +404,7 @@ def start_bot():
     except KeyboardInterrupt:
         # Ctrl+C
         print("\nBot stopped by user.")
-        return
+        return False
 
 print("BOT STARTED")
 sync_github_to_local()
