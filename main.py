@@ -110,7 +110,7 @@ def cmd_ban(message):
             f'✅ Пользователь <a href="tg://user?id={uid}">{name}</a> забанен.',
             parse_mode="HTML"
         )
-        parser.save_db()
+        parser.save_db(db)
         github_save_db(db, message=f"Update: user {uid} registered/banned/unbanned")
     else:
         bot.reply_to(message, "❌ Не удалось забанить пользователя.")
@@ -170,7 +170,7 @@ def cmd_unban(message):
             f'✅ Пользователь <a href="tg://user?id={uid}">{name}</a> разбанен.',
             parse_mode="HTML"
         )
-        parser.save_db()
+        parser.save_db(db)
         github_save_db(db, message=f"Update: user {uid} registered/banned/unbanned")
     else:
         bot.reply_to(message, "❌ Не удалось разбанить пользователя.")
@@ -266,7 +266,7 @@ def flow(message):
             db["users"].append(user)
 
         # Сохраняем базу
-        parser.save_db()
+        parser.save_db(db)
         github_save_db(db, message=f"Update by {message.from_user.username}")
 
         text = (
@@ -286,6 +286,7 @@ def flow(message):
             if u["telegram_id"] == uid:
                 u["mirror_msg"] = msg.message_id
 
+        parser.save_db(db)
         github_save_db(db, message=f"Update by {message.from_user.username}")
 
 
