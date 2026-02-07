@@ -399,5 +399,9 @@ logging.getLogger("telebot").setLevel(logging.CRITICAL)  # глушим internal
 while True:
     try:
         bot.polling(non_stop=True, timeout=60, long_polling_timeout=60)
+    except KeyboardInterrupt:
+        print("Бот остановлен вручную")
+        break
     except Exception:
+        # при разрывах сети просто ждём 5 секунд и переподключаемся
         time.sleep(5)
