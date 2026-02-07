@@ -2,7 +2,7 @@ import telebot
 from telebot import types
 from config import BOT_TOKEN, ADMINS, FACTIONS, KITS, MIRROR_GROUP
 import parser
-from parser import ban_user, unban_user, find_user, is_banned, add_user, mirror_load_db
+from parser import ban_user, unban_user, find_user, is_banned, add_user
 from logger import log
 from telebot.types import ReplyKeyboardRemove
 
@@ -270,6 +270,44 @@ def flow(message):
         log(f"NEW USER {uid}")
         sessions.pop(uid)
         return
+
+def mirror_load_db():
+    """Считываем все сообщения из группы и создаем базу восстановления"""
+    db = {"users": []}
+
+    try:
+        for msg in bot.get_chat(MIRROR_GROUP).get_history(limit=1000):  # или нужный лимит
+            # проверяем формат сообщения
+            if not msg.text:
+                continue
+            lines = msg.text.splitlines()
+            if len(lines) < 6:
+                continue
+
+            try:
+                uid = int(lines[0].split("🆔")[1].strip())
+                minecraft = lines[1].split("🎮")[1].strip()
+                username = lines[2].split("👤")[1].strip().replace("@", "")
+                faction = lines[3].split("🏳")[1].strip()
+                kit = lines[4].split("🧰")[1].strip()
+                banned = lines[5].split("🚫 banned:")[1].strip().lower() == "true"
+            except:
+                continue
+
+            db["users"].append({
+                "telegram_id": uid,
+                "minecraft": minecraft,
+                "username": username,
+                "faction": faction,
+                "kit": kit,
+                "banned": banned,
+                "mirror_msg": msg.message_id
+            })
+    except Exception as e:
+        print("Mirror load error:", e)
+
+    parser.save_db(db)
+    print("✅ База восстановлена из зеркала")
 
 print("BOT STARTED")
 bot.infinity_polling()
