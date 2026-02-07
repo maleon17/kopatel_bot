@@ -51,31 +51,6 @@ def rcon_del_user(nick: str):
     except Exception as e:
         print(f"RCON ERROR: del {nick} -> {e}")
 
-# Очередь RCON
-rcon_queue = queue.Queue()
-
-# Поток RCON
-def rcon_worker():
-    while True:
-        cmd = rcon_queue.get()
-        if cmd is None:
-            break
-        try:
-            action, nick = cmd
-            if not nick:
-                continue
-            if action == "ban":
-                rcon_ban(nick)
-            elif action == "unban":
-                rcon_unban(nick)
-            elif action == "del":
-                rcon_del_user(nick)
-        except Exception as e:
-            print("RCON ERROR:", e)
-        rcon_queue.task_done()
-
-threading.Thread(target=rcon_worker, daemon=True).start()
-
 
 def main_menu(chat):
     kb = types.ReplyKeyboardMarkup(resize_keyboard=True)
