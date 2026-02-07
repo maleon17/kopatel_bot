@@ -1,4 +1,5 @@
 import json
+from config import MIRROR_GROUP
 
 DB_FILE = "base.jsonc"
 
