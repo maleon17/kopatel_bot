@@ -5,6 +5,7 @@ import base64
 import json
 import time
 import logging 
+from mcrcon import MCRcon
 from telebot import types
 from config import BOT_TOKEN, ADMINS, FACTIONS, KITS, MIRROR_GROUP
 import parser
@@ -13,6 +14,9 @@ from logger import log
 from telebot.types import ReplyKeyboardRemove
 sys.path.append("/data/data/com.termux/files/home/github_lib")
 from github import GITHUB_TOKEN, GITHUB_REPO, GITHUB_FILE
+
+logging.getLogger("urllib3").setLevel(logging.CRITICAL)
+logging.getLogger("telebot").setLevel(logging.CRITICAL)
 
 bot = telebot.TeleBot(BOT_TOKEN)
 
@@ -80,6 +84,8 @@ def cmd_ban(message):
     if ban_user(target):
         uid = user["telegram_id"]
         name = user.get("minecraft") or user.get("username") or str(uid)
+        if user.get("minecraft"):
+            rcon_ban_user(user["minecraft"])
 
         # --- обновляем сообщение в зеркале ---
         db = parser.load_db()
@@ -139,6 +145,8 @@ def cmd_unban(message):
     if unban_user(target):
         uid = user["telegram_id"]
         name = user.get("minecraft") or user.get("username") or str(uid)
+        if user.get("minecraft"):
+            rcon_unban_user(user["minecraft"])
 
         # --- обновляем сообщение в зеркале ---
         db = parser.load_db()
@@ -214,6 +222,9 @@ def cmd_deluser(message):
 
     parser.save_db(db)
     github_save_db(db, message=f"DELETE user {uid}")
+
+    if user.get("minecraft"):
+        rcon_ban_user(user["minecraft"])
 
     bot.send_message(
         message.chat.id,
@@ -310,6 +321,9 @@ def flow(message):
         if not exists:
             db["users"].append(user)
 
+        if user.get("minecraft"):
+            rcon_command(f"whitelist add {user['minecraft']}")
+
         # Сохраняем базу
         parser.save_db(db)
         github_save_db(db, message=f"Update by {message.from_user.username}")
@@ -391,24 +405,32 @@ def sync_github_to_local():
     except Exception as e:
         print("GitHub sync failed:", e)
 
-def start_bot():
+# ------------RCON-----------
+
+def rcon_command(cmd: str) -> bool:
+    """Выполнить команду через RCON, вернуть True если прошло."""
     try:
-        while True:
-            try:
-                # Запускаем polling
-                bot.polling(non_stop=True, timeout=60)
-            except Exception as e:
-                # Логируем ошибки (например 409 или сетевые)
-                print("Bot error:", e)
-                time.sleep(5)  # Ждём перед повтором
-    except KeyboardInterrupt:
-        # Ctrl+C
-        print("\nBot stopped by user.")
+        with MCRcon(RCON_HOST, RCON_PASSWORD, port=RCON_PORT) as mcr:
+            resp = mcr.command(cmd)
+            print(f"RCON: {cmd} -> {resp}")
+        return True
+    except Exception as e:
+        print(f"RCON ERROR: {cmd} -> {e}")
         return False
+
+def rcon_ban_user(minecraft_nick: str) -> bool:
+    return rcon_command(f"ban {minecraft_nick}")
+
+def rcon_unban_user(minecraft_nick: str) -> bool:
+    return rcon_command(f"pardon {minecraft_nick}")
+
+def rcon_del_user(minecraft_nick: str) -> bool:
+    """Удаляет пользователя из whitelist на сервере (если используешь whitelist)."""
+    return rcon_command(f"whitelist remove {minecraft_nick}")
+
 
 print("BOT STARTED")
 sync_github_to_local()
-
-logging.getLogger("telebot").setLevel(logging.CRITICAL)  # глушим internal лог
+bot.infinity_polling()
 
 start_bot()
