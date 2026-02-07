@@ -43,6 +43,7 @@ def start(message):
         reply_markup=ReplyKeyboardRemove()
     )
 
+
 # ---------------- BAN ----------------
 @bot.message_handler(commands=["ban"])
 def cmd_ban(message):
@@ -62,9 +63,29 @@ def cmd_ban(message):
         return
 
     if ban_user(target):
-
-        name = user.get("minecraft") or user.get("username") or str(user["telegram_id"])
         uid = user["telegram_id"]
+        name = user.get("minecraft") or user.get("username") or str(uid)
+
+        # --- обновляем сообщение в зеркале ---
+        db = parser.load_db()
+        if "mirror_msg" in user and MIRROR_GROUP:
+            try:
+                text = (
+                    f"🆔 {uid}\n"
+                    f"🎮 {user.get('minecraft')}\n"
+                    f"👤 @{user.get('username')}\n"
+                    f"🏳 {user.get('faction')}\n"
+                    f"🧰 {user.get('kit')}\n"
+                    f"🚫 banned: true"
+                )
+                bot.edit_message_text(
+                    chat_id=MIRROR_GROUP,
+                    message_id=user["mirror_msg"],
+                    text=text,
+                    parse_mode="HTML"
+                )
+            except Exception as e:
+                print("Mirror update error:", e)
 
         bot.send_message(
             message.chat.id,
@@ -73,6 +94,7 @@ def cmd_ban(message):
         )
     else:
         bot.reply_to(message, "❌ Не удалось забанить пользователя.")
+
 
 # ---------------- UNBAN ----------------
 @bot.message_handler(commands=["unban"])
@@ -93,9 +115,29 @@ def cmd_unban(message):
         return
 
     if unban_user(target):
-
-        name = user.get("minecraft") or user.get("username") or str(user["telegram_id"])
         uid = user["telegram_id"]
+        name = user.get("minecraft") or user.get("username") or str(uid)
+
+        # --- обновляем сообщение в зеркале ---
+        db = parser.load_db()
+        if "mirror_msg" in user and MIRROR_GROUP:
+            try:
+                text = (
+                    f"🆔 {uid}\n"
+                    f"🎮 {user.get('minecraft')}\n"
+                    f"👤 @{user.get('username')}\n"
+                    f"🏳 {user.get('faction')}\n"
+                    f"🧰 {user.get('kit')}\n"
+                    f"🚫 banned: false"
+                )
+                bot.edit_message_text(
+                    chat_id=MIRROR_GROUP,
+                    message_id=user["mirror_msg"],
+                    text=text,
+                    parse_mode="HTML"
+                )
+            except Exception as e:
+                print("Mirror update error:", e)
 
         bot.send_message(
             message.chat.id,
