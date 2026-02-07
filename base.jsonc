@@ -35,6 +35,14 @@
             "kit": "🎯 Снайпер",
             "banned": false,
             "mirror_msg": 16
+        },
+        {
+            "telegram_id": 8180611796,
+            "username": "Cahipura",
+            "minecraft": "RoguePrime20",
+            "faction": "🔴 Красные",
+            "kit": "🎯 Снайпер",
+            "banned": false
         }
     ]
 }
