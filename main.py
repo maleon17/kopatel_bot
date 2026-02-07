@@ -19,43 +19,39 @@ from github import GITHUB_TOKEN, GITHUB_REPO, GITHUB_FILE
 
 # -------------- RCON функции ---------------
 
-def rcon_ban(nick):
-    from rcon.source import Client
+from mcrcon import MCRcon
+
+def rcon_ban(nick: str):
     try:
-        with Client(RCON_HOST, RCON_PORT, passwd=RCON_PASSWORD) as client:
-            client.run(f"ban {nick}")
-            print(f"RCON: ban {nick}")
+        with MCRcon(RCON_HOST, RCON_PASSWORD, port=RCON_PORT) as mcr:
+            resp = mcr.command(f"ban {nick}")
+            print(f"RCON: ban {nick} -> {resp}")
     except Exception as e:
-        print(f"RCON ERROR: ban {nick} ->", e)
+        print(f"RCON ERROR: ban {nick} -> {e}")
 
-
-def rcon_unban(nick):
-    from rcon.source import Client
+def rcon_unban(nick: str):
     try:
-        with Client(RCON_HOST, RCON_PORT, passwd=RCON_PASSWORD) as client:
-            client.run(f"pardon {nick}")
-            print(f"RCON: unban {nick}")
+        with MCRcon(RCON_HOST, RCON_PASSWORD, port=RCON_PORT) as mcr:
+            resp = mcr.command(f"pardon {nick}")
+            print(f"RCON: unban {nick} -> {resp}")
     except Exception as e:
-        print(f"RCON ERROR: unban {nick} ->", e)
+        print(f"RCON ERROR: unban {nick} -> {e}")
 
-
-def rcon_del_user(nick):
-    from rcon.source import Client
+def rcon_del_user(nick: str):
     try:
-        with Client(RCON_HOST, RCON_PORT, passwd=RCON_PASSWORD) as client:
-            client.run(f"whitelist remove {nick}")
-            print(f"RCON: del {nick}")
+        with MCRcon(RCON_HOST, RCON_PASSWORD, port=RCON_PORT) as mcr:
+            resp = mcr.command(f"whitelist remove {nick}")
+            print(f"RCON: del {nick} -> {resp}")
     except Exception as e:
-        print(f"RCON ERROR: del {nick} ->", e)
+        print(f"RCON ERROR: del {nick} -> {e}")
 
-# Очередь для команд RCON
+# ---------- Очередь для RCON команд ----------
 rcon_queue = queue.Queue()
 
-# Поток, который выполняет команды RCON
 def rcon_worker():
     while True:
-        cmd = rcon_queue.get()  # ждём команду
-        if cmd is None:  # сигнал для остановки потока
+        cmd = rcon_queue.get()
+        if cmd is None:
             break
         try:
             action, nick = cmd
@@ -73,7 +69,6 @@ def rcon_worker():
 
 # Стартуем поток один раз при запуске бота
 threading.Thread(target=rcon_worker, daemon=True).start()
-
 
 logging.getLogger("urllib3").setLevel(logging.CRITICAL)
 logging.getLogger("telebot").setLevel(logging.CRITICAL)
