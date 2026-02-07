@@ -85,6 +85,9 @@ def rcon_process_worker(queue, host, port, password):
                 elif action == "del":
                     resp = mcr.command(f"whitelist remove {nick}")
                     print(f"RCON: del {nick} -> {resp}")
+                elif action == "whitelist":
+                    resp = mcr.command(f"whitelist add {nick}")
+                    print(f"RCON: whitelist add {nick} -> {resp}")
         except Exception as e:
             print("RCON ERROR:", e)
 
