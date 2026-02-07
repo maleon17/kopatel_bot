@@ -51,7 +51,8 @@
             "minecraft": "Caxarocek",
             "faction": "🔴 Красные",
             "kit": "👨‍⚕️ Медик",
-            "banned": false
+            "banned": false,
+            "mirror_msg": 18
         }
     ]
 }
