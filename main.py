@@ -17,9 +17,15 @@ from telebot.types import ReplyKeyboardRemove
 sys.path.append("/data/data/com.termux/files/home/github_lib")
 from github import GITHUB_TOKEN, GITHUB_REPO, GITHUB_FILE
 
-# -------------- RCON функции ---------------
 
-from mcrcon import MCRcon
+logging.getLogger("urllib3").setLevel(logging.CRITICAL)
+logging.getLogger("telebot").setLevel(logging.CRITICAL)
+
+bot = telebot.TeleBot(BOT_TOKEN)
+
+sessions = {}
+
+# -------------- RCON функции ---------------
 
 def rcon_ban(nick: str):
     try:
@@ -44,38 +50,6 @@ def rcon_del_user(nick: str):
             print(f"RCON: del {nick} -> {resp}")
     except Exception as e:
         print(f"RCON ERROR: del {nick} -> {e}")
-
-# ---------- Очередь для RCON команд ----------
-rcon_queue = queue.Queue()
-
-def rcon_worker():
-    while True:
-        cmd = rcon_queue.get()
-        if cmd is None:
-            break
-        try:
-            action, nick = cmd
-            if not nick:
-                continue
-            if action == "ban":
-                rcon_ban(nick)
-            elif action == "unban":
-                rcon_unban(nick)
-            elif action == "del":
-                rcon_del_user(nick)
-        except Exception as e:
-            print("RCON ERROR:", e)
-        rcon_queue.task_done()
-
-# Стартуем поток один раз при запуске бота
-threading.Thread(target=rcon_worker, daemon=True).start()
-
-logging.getLogger("urllib3").setLevel(logging.CRITICAL)
-logging.getLogger("telebot").setLevel(logging.CRITICAL)
-
-bot = telebot.TeleBot(BOT_TOKEN)
-
-sessions = {}
 
 
 def main_menu(chat):
@@ -140,7 +114,7 @@ def cmd_ban(message):
         uid = user["telegram_id"]
         name = user.get("minecraft") or user.get("username") or str(uid)
         if user.get("minecraft"):
-            rcon_queue.put(("ban", user["minecraft"]))
+            rcon_ban(user["minecraft"]) 
 
         # --- обновляем сообщение в зеркале ---
         db = parser.load_db()
@@ -201,7 +175,7 @@ def cmd_unban(message):
         uid = user["telegram_id"]
         name = user.get("minecraft") or user.get("username") or str(uid)
         if user.get("minecraft"):
-            rcon_queue.put(("unban", user["minecraft"]))
+            rcon_unban(user["minecraft"])
 
 
         # --- обновляем сообщение в зеркале ---
@@ -280,7 +254,7 @@ def cmd_deluser(message):
     github_save_db(db, message=f"DELETE user {uid}")
 
     if user.get("minecraft"):
-        rcon_queue.put(("del", user["minecraft"]))
+        rcon_del_user(user["minecraft"])
 
     bot.send_message(
         message.chat.id,
