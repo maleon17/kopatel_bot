@@ -5,6 +5,8 @@ import base64
 import json
 import time
 import logging 
+import queue
+import threading
 from mcrcon import MCRcon
 from telebot import types
 from config import BOT_TOKEN, ADMINS, FACTIONS, KITS, MIRROR_GROUP, RCON_HOST, RCON_PORT, RCON_PASSWORD
@@ -14,6 +16,33 @@ from logger import log
 from telebot.types import ReplyKeyboardRemove
 sys.path.append("/data/data/com.termux/files/home/github_lib")
 from github import GITHUB_TOKEN, GITHUB_REPO, GITHUB_FILE
+
+# Очередь для команд RCON
+rcon_queue = queue.Queue()
+
+# Поток, который выполняет команды RCON
+def rcon_worker():
+    while True:
+        cmd = rcon_queue.get()  # ждём команду
+        if cmd is None:  # сигнал для остановки потока
+            break
+        try:
+            action, nick = cmd
+            if not nick:
+                continue
+            if action == "ban":
+                rcon_ban(nick)
+            elif action == "unban":
+                rcon_unban(nick)
+            elif action == "del":
+                rcon_del_user(nick)
+        except Exception as e:
+            print("RCON ERROR:", e)
+        rcon_queue.task_done()
+
+# Стартуем поток один раз при запуске бота
+threading.Thread(target=rcon_worker, daemon=True).start()
+
 
 logging.getLogger("urllib3").setLevel(logging.CRITICAL)
 logging.getLogger("telebot").setLevel(logging.CRITICAL)
