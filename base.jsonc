@@ -115,7 +115,10 @@
             "faction": "🔵 Синие",
             "kit": "🎯 Снайпер",
             "banned": false,
-            "mirror_msg": 41
+            "mirror_msg": 41,
+            "verification_code": "HNETR3",
+            "code_expires": "2026-02-09T16:31:59.707480",
+            "code_used": false
         }
     ]
 }
