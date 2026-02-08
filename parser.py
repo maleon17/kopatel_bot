@@ -1,4 +1,7 @@
 import json
+import random
+import string
+from datetime import datetime, timedelta
 
 DB_FILE = "base.jsonc"
 
@@ -85,3 +88,69 @@ def is_banned(tg_id):
         if u["telegram_id"] == tg_id:
             return u.get("banned", False)
     return False
+
+def generate_verification_code(tg_id):
+    """
+    Генерирует новый 6-значный код верификации для пользователя
+    Код действителен 24 часа
+    Возвращает сгенерированный код или None если пользователь не найден
+    """
+    db = load_db()
+    
+    # Генерируем случайный 6-значный код (буквы + цифры)
+    code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+    
+    # Устанавливаем срок действия (24 часа)
+    expires = datetime.now() + timedelta(hours=24)
+    
+    # Находим пользователя и обновляем его код
+    user_found = False
+    for u in db["users"]:
+        if u["telegram_id"] == tg_id:
+            u["verification_code"] = code
+            u["code_expires"] = expires.isoformat()
+            u["code_used"] = False
+            user_found = True
+            break
+    
+    if not user_found:
+        return None
+    
+    save_db(db)
+    return code
+
+def get_verification_code(tg_id):
+    """
+    Получает текущий код верификации пользователя
+    Возвращает None если код отсутствует или истёк
+    """
+    db = load_db()
+    
+    for u in db["users"]:
+        if u["telegram_id"] == tg_id:
+            if not u.get("verification_code"):
+                return None
+            
+            # Проверяем срок действия
+            if u.get("code_expires"):
+                try:
+                    expires = datetime.fromisoformat(u["code_expires"])
+                    if datetime.now() > expires:
+                        return None  # Код истёк
+                except:
+                    return None
+            
+            return u["verification_code"]
+    
+    return None
+
+def mark_code_as_used(tg_id):
+    """Отмечает код как использованный"""
+    db = load_db()
+    
+    for u in db["users"]:
+        if u["telegram_id"] == tg_id:
+            u["code_used"] = True
+            break
+    
+    save_db(db)
