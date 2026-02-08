@@ -98,6 +98,15 @@
             "kit": "🛠 Инженер",
             "banned": false,
             "mirror_msg": 37
+        },
+        {
+            "telegram_id": 1748715156,
+            "username": "@qqqSamurai_m6",
+            "minecraft": "danlk228567",
+            "faction": "🔵 Синие",
+            "kit": "🪖 Воин",
+            "banned": false,
+            "mirror_msg": 38
         }
     ]
 }
