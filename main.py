@@ -1,5 +1,11 @@
-import telebot
+print("=== Starting bot ===")
+
 import sys
+print("✓ sys imported")
+
+import telebot
+print("✓ telebot imported")
+
 import requests
 import base64
 import json
@@ -7,116 +13,56 @@ import time
 import logging 
 import queue
 import threading
-import multiprocessing 
-import string
-import random
-from datetime import datetime, timedelta
+import multiprocessing
+print("✓ standard libraries imported")
+
 from mcrcon import MCRcon
+print("✓ mcrcon imported")
+
 from telebot import types
+print("✓ telebot.types imported")
+
 import parser
 from parser import ban_user, unban_user, find_user, is_banned, add_user
+print("✓ parser imported")
+
 from logger import log
+print("✓ logger imported")
+
 from telebot.types import ReplyKeyboardRemove
+print("✓ ReplyKeyboardRemove imported")
+
 from config import BOT_TOKEN, ADMINS, FACTIONS, KITS, MIRROR_GROUP, RCON_HOST, RCON_PORT, RCON_PASSWORD
+print("✓ config imported")
 
-# Flask для API
-from flask import Flask, request, jsonify
-
-sys.path.append("/data/data/com.termux/files/home/github_lib")
-from github import GITHUB_TOKEN, GITHUB_REPO, GITHUB_FILE
+# GitHub импорт - делаем опциональным
+try:
+    sys.path.append("/data/data/com.termux/files/home/github_lib")
+    from github import GITHUB_TOKEN, GITHUB_REPO, GITHUB_FILE
+    GITHUB_ENABLED = True
+    print("✓ github imported (enabled)")
+except ImportError:
+    print("⚠ github.py not found - trying local")
+    try:
+        from github import GITHUB_TOKEN, GITHUB_REPO, GITHUB_FILE
+        GITHUB_ENABLED = True
+        print("✓ github imported from local (enabled)")
+    except ImportError:
+        print("⚠ github.py not found - GitHub sync disabled")
+        GITHUB_ENABLED = False
+        GITHUB_TOKEN = None
+        GITHUB_REPO = None
+        GITHUB_FILE = None
 
 
 logging.getLogger("urllib3").setLevel(logging.CRITICAL)
 logging.getLogger("telebot").setLevel(logging.CRITICAL)
-logging.getLogger("werkzeug").setLevel(logging.CRITICAL)
+print("✓ logging configured")
 
 bot = telebot.TeleBot(BOT_TOKEN)
-app = Flask(__name__)
+print("✓ bot initialized")
 
 sessions = {}
-
-# ----------------- FLASK API -----------------
-
-@app.route('/check_code', methods=['GET'])
-def check_code():
-    """API для проверки кода подтверждения модом"""
-    nick = request.args.get('nick')
-    code = request.args.get('code')
-    
-    if not nick or not code:
-        return jsonify({"valid": False, "error": "Missing parameters"})
-    
-    # Ищем пользователя по minecraft нику
-    user = find_user(nick)
-    
-    if not user:
-        return jsonify({"valid": False, "error": "User not found"})
-    
-    # Проверяем код
-    if not user.get("verification_code"):
-        return jsonify({"valid": False, "error": "No code generated"})
-    
-    if user["verification_code"].upper() != code.upper():
-        return jsonify({"valid": False, "error": "Invalid code"})
-    
-    # Проверяем срок действия
-    if "code_expires" in user:
-        expires = datetime.fromisoformat(user["code_expires"])
-        if datetime.now() > expires:
-            return jsonify({"valid": False, "error": "Code expired"})
-    
-    # Помечаем код как использованный и обновляем время
-    db = parser.load_db()
-    for u in db["users"]:
-        if u["telegram_id"] == user["telegram_id"]:
-            u["code_used"] = True
-            u["last_verified"] = datetime.now().isoformat()
-            break
-    
-    parser.save_db(db)
-    
-    # Уведомляем пользователя в Telegram
-    try:
-        bot.send_message(
-            user["telegram_id"],
-            f"✅ Вход на сервер подтверждён!\n"
-            f"🎮 Ник: {nick}\n"
-            f"⏰ Время: {datetime.now().strftime('%H:%M:%S')}"
-        )
-    except:
-        pass
-    
-    return jsonify({"valid": True, "username": user.get("username"), "telegram_id": user["telegram_id"]})
-
-@app.route('/player_join', methods=['POST'])
-def player_join():
-    """API для уведомлений о входе игрока (опционально)"""
-    data = request.get_json()
-    nick = data.get('nick')
-    
-    user = find_user(nick)
-    if user:
-        try:
-            bot.send_message(
-                user["telegram_id"],
-                f"🔔 Попытка входа на сервер\n"
-                f"🎮 Ник: {nick}\n"
-                f"⏰ Время: {datetime.now().strftime('%H:%M:%S')}\n\n"
-                f"Если это не вы, срочно смените код командой /getcode"
-            )
-        except:
-            pass
-    
-    return jsonify({"status": "ok"})
-
-def run_flask():
-    """Запуск Flask сервера в отдельном потоке"""
-    app.run(host='0.0.0.0', port=5000, debug=False, use_reloader=False)
-
-# Запускаем Flask в отдельном потоке
-flask_thread = threading.Thread(target=run_flask, daemon=True)
-flask_thread.start()
-print("✅ Flask API started on http://0.0.0.0:5000")
 
 # ----------------- RCON PROCESS -------------------
 
@@ -127,11 +73,12 @@ def rcon_process_worker(queue, host, port, password):
     """Процесс для выполнения команд RCON"""
     while True:
         cmd = queue.get()
-        if cmd is None:
+        if cmd is None:  # сигнал для завершения процесса
             break
         try:
             action = cmd[0]
             
+            # Для custom команды второй параметр - сама команда целиком
             if action == "custom":
                 command = cmd[1]
                 with MCRcon(host, password, port=port) as mcr:
@@ -139,6 +86,7 @@ def rcon_process_worker(queue, host, port, password):
                     print(f"RCON: {command} -> {resp}")
                 continue
             
+            # Для остальных команд второй параметр - ник
             nick = cmd[1]
             if not nick:
                 continue
@@ -164,12 +112,17 @@ def rcon_process_worker(queue, host, port, password):
         except Exception as e:
             print("RCON ERROR:", e)
 
+# Запуск процесса один раз при старте бота
+print("Starting RCON process...")
 rcon_process = multiprocessing.Process(
     target=rcon_process_worker, 
     args=(rcon_queue, RCON_HOST, RCON_PORT, RCON_PASSWORD),
     daemon=True
 )
 rcon_process.start()
+print("✓ RCON process started")
+
+# --------- Функции для добавления команд в очередь ---------
 
 def rcon_ban(nick):
     rcon_queue.put(("ban", nick))
@@ -190,61 +143,23 @@ def rcon_deop(nick):
     rcon_queue.put(("deop", nick))
 
 def rcon_custom_command(command):
+    """Отправка произвольной команды через RCON"""
     rcon_queue.put(("custom", command))
 
-def generate_code():
-    """Генерирует случайный 6-значный код"""
-    chars = string.ascii_uppercase + string.digits
-    chars = chars.replace('O', '').replace('I', '').replace('0', '').replace('1', '')
-    return ''.join(random.choice(chars) for _ in range(6))
-
-@bot.message_handler(commands=["getcode", "code"])
-def cmd_getcode(message):
-    if message.chat.type != "private":
-        return
-    
-    uid = message.from_user.id
-    user = find_user(uid)
-    
-    if not user:
-        bot.reply_to(message, "❌ Вы не зарегистрированы. Используйте /start")
-        return
-    
-    code = generate_code()
-    expires = datetime.now() + timedelta(hours=24)
-    
-    db = parser.load_db()
-    for u in db["users"]:
-        if u["telegram_id"] == uid:
-            u["verification_code"] = code
-            u["code_expires"] = expires.isoformat()
-            u["code_used"] = False
-            break
-    
-    parser.save_db(db)
-    github_save_db(db, message=f"Generate code for {uid}")
-    
-    bot.send_message(
-        message.chat.id,
-        f"🔐 <b>Код подтверждения для сервера</b>\n\n"
-        f"<code>{code}</code>\n\n"
-        f"⏰ Действителен: 24 часа\n"
-        f"📝 Введите в Minecraft:\n"
-        f"<code>/verify {code}</code>",
-        parse_mode="HTML"
-    )
-    
-    log(f"Code generated for {uid}: {code}")
 
 @bot.message_handler(commands=["start"])
 def start(message):
-    try:
-        sync_github_to_local()
-        db = github_load_db()
-    except Exception as e:
-        print("GitHub load error:", e)
-        db = {"users": []}
+    if GITHUB_ENABLED:
+        try:
+            sync_github_to_local()
+            db = github_load_db()
+        except Exception as e:
+            print("GitHub load error:", e)
+            db = {"users": []}
+    else:
+        db = parser.load_db()
 
+    # игнорируем группы
     if message.chat.type != "private":
         return
 
@@ -255,8 +170,7 @@ def start(message):
         bot.send_message(
             message.chat.id,
             f"Пользователь уже зарегистрирован ❌\n"
-            f"{existing['minecraft']}, вы выбрали:\nФракция: {existing['faction']}\nKit: {existing['kit']}\n\n"
-            f"💡 Используйте /getcode для получения кода входа на сервер",
+            f"{existing['minecraft']}, вы выбрали:\nФракция: {existing['faction']}\nKit: {existing['kit']}",
             reply_markup=ReplyKeyboardRemove()
         )
         return
@@ -268,6 +182,8 @@ def start(message):
         reply_markup=ReplyKeyboardRemove()
     )
 
+
+# ---------------- BAN ----------------
 @bot.message_handler(commands=["ban"])
 def cmd_ban(message):
     if message.from_user.id not in ADMINS:
@@ -291,7 +207,9 @@ def cmd_ban(message):
         if user.get("minecraft"):
             rcon_ban(user["minecraft"]) 
 
+        # --- обновляем сообщение в зеркале ---
         db = parser.load_db()
+        # находим пользователя в базе
         for u in db["users"]:
             if u["telegram_id"] == uid:
                 u["banned"] = True
@@ -322,10 +240,13 @@ def cmd_ban(message):
             parse_mode="HTML"
         )
         parser.save_db(db)
-        github_save_db(db, message=f"Ban user {uid}")
+        if GITHUB_ENABLED:
+            github_save_db(db, message=f"Ban user {uid}")
+            signal_mod_reload()  # Сигнал моду обновить базу
     else:
         bot.reply_to(message, "❌ Не удалось забанить пользователя.")
 
+# ---------------- UNBAN ----------------
 @bot.message_handler(commands=["unban"])
 def cmd_unban(message):
     if message.from_user.id not in ADMINS:
@@ -349,7 +270,9 @@ def cmd_unban(message):
         if user.get("minecraft"):
             rcon_unban(user["minecraft"])
 
+        # --- обновляем сообщение в зеркале ---
         db = parser.load_db()
+        # находим пользователя в базе
         for u in db["users"]:
             if u["telegram_id"] == uid:
                 u["banned"] = False
@@ -381,10 +304,13 @@ def cmd_unban(message):
             parse_mode="HTML"
         )
         parser.save_db(db)
-        github_save_db(db, message=f"Unban user {uid}")
+        if GITHUB_ENABLED:
+            github_save_db(db, message=f"Unban user {uid}")
+            signal_mod_reload()  # Сигнал моду обновить базу
     else:
         bot.reply_to(message, "❌ Не удалось разбанить пользователя.")
 
+# ---------------- DEL USER ----------------
 @bot.message_handler(commands=["deluser"])
 def cmd_deluser(message):
     if message.from_user.id not in ADMINS:
@@ -408,16 +334,20 @@ def cmd_deluser(message):
 
     db = parser.load_db()
 
+    # --- удаляем mirror сообщение ---
     if "mirror_msg" in user and MIRROR_GROUP:
         try:
             bot.delete_message(MIRROR_GROUP, user["mirror_msg"])
         except Exception as e:
             print("Mirror delete error:", e)
 
+    # --- удаляем из локальной базы ---
     db["users"] = [u for u in db["users"] if u["telegram_id"] != uid]
 
     parser.save_db(db)
-    github_save_db(db, message=f"Delete user {uid}")
+    if GITHUB_ENABLED:
+        github_save_db(db, message=f"Delete user {uid}")
+        signal_mod_reload()  # Сигнал моду обновить базу
 
     if user.get("minecraft"):
         rcon_del_user(user["minecraft"])
@@ -428,6 +358,7 @@ def cmd_deluser(message):
         parse_mode="HTML"
     )
 
+# ---------------- SYNC WHITELIST ----------------
 @bot.message_handler(commands=["syncwhitelist"])
 def cmd_sync_whitelist(message):
     if message.from_user.id not in ADMINS:
@@ -442,16 +373,18 @@ def cmd_sync_whitelist(message):
     error_count = 0
     
     for user in db["users"]:
+        # Пропускаем забаненных
         if user.get("banned", False):
             continue
         
+        # Пропускаем пользователей без Minecraft ника
         if not user.get("minecraft"):
             continue
         
         try:
             rcon_whitelist_add(user["minecraft"])
             added_count += 1
-            time.sleep(0.1)
+            time.sleep(0.1)  # небольшая задержка между командами
         except Exception as e:
             print(f"Error adding {user['minecraft']} to whitelist: {e}")
             error_count += 1
@@ -466,6 +399,7 @@ def cmd_sync_whitelist(message):
         f"• Забанено: {sum(1 for u in db['users'] if u.get('banned', False))}"
     )
 
+# ---------------- OP ----------------
 @bot.message_handler(commands=["op"])
 def cmd_op(message):
     if message.from_user.id not in ADMINS:
@@ -501,6 +435,7 @@ def cmd_op(message):
     )
     log(f"OP granted to {uid} ({minecraft_nick})")
 
+# ---------------- DEOP ----------------
 @bot.message_handler(commands=["deop"])
 def cmd_deop(message):
     if message.from_user.id not in ADMINS:
@@ -536,6 +471,7 @@ def cmd_deop(message):
     )
     log(f"OP removed from {uid} ({minecraft_nick})")
 
+# ---------------- CUSTOM COMMAND ----------------
 @bot.message_handler(commands=["command", "cmd"])
 def cmd_custom_command(message):
     if message.from_user.id not in ADMINS:
@@ -555,24 +491,31 @@ def cmd_custom_command(message):
     command = args[1].strip()
     original_command = command
     
+    # Разбиваем команду на слова
     words = command.split()
     db = parser.load_db()
     
+    # Проходим по каждому слову и пытаемся найти пользователя
     converted_words = []
-    conversions = []
+    conversions = []  # для логирования
     
     for word in words:
         user = find_user(word)
         if user and user.get("minecraft"):
+            # Нашли пользователя - заменяем на его Minecraft ник
             converted_words.append(user["minecraft"])
             conversions.append(f"{word} → {user['minecraft']}")
         else:
+            # Не нашли - оставляем как есть
             converted_words.append(word)
     
+    # Собираем команду обратно
     final_command = " ".join(converted_words)
     
+    # Отправляем команду
     rcon_custom_command(final_command)
     
+    # Формируем ответ
     if conversions:
         conversion_text = "\n".join([f"• {c}" for c in conversions])
         bot.send_message(
@@ -599,6 +542,7 @@ def flow(message):
     user_id = message.from_user.id
     uid = message.from_user.id
 
+    # Игнорируем сообщения в группах
     if message.chat.type != "private":
         return
 
@@ -610,6 +554,7 @@ def flow(message):
 
     s = sessions[uid]
 
+    # ник
     if "nick" not in s:
         nick = message.text.strip()
         if " " in nick or len(nick) < 3 or len(nick) > 16:
@@ -624,6 +569,7 @@ def flow(message):
         bot.send_message(message.chat.id, "Выберите фракцию:", reply_markup=kb)
         return
 
+    # фракция
     if "faction" not in s:
         if message.text not in FACTIONS:
             bot.send_message(message.chat.id, "❌ Выберите фракцию из предложенных кнопок.")
@@ -638,6 +584,7 @@ def flow(message):
         bot.send_message(message.chat.id, "Выберите kit:", reply_markup=kb)
         return
 
+    # kit
     if "kit" not in s:
         if message.text not in KITS:
             bot.send_message(message.chat.id, "❌ Выберите kit из предложенных кнопок.")
@@ -653,6 +600,7 @@ def flow(message):
             reply_markup=kb)
         return
 
+    # подтверждение
     if message.text == "Выбрать заново ❌":
         sessions.pop(uid)
         start(message)
@@ -674,8 +622,10 @@ def flow(message):
             "banned": False
         }
 
+        # Загружаем базу
         db = parser.load_db()
 
+        # Проверяем, есть ли уже пользователь
         exists = False
         for i, u in enumerate(db["users"]):
             if u["telegram_id"] == uid:
@@ -683,12 +633,14 @@ def flow(message):
                 exists = True
                 break
 
+        # Если нового пользователя — добавляем
         if not exists:
             db["users"].append(user)
 
         if user.get("minecraft"):
             rcon_whitelist_add(user["minecraft"])
 
+        # Сохраняем базу
         parser.save_db(db)
 
         text = (
@@ -700,9 +652,11 @@ def flow(message):
             f"🚫 banned: false"
         )
 
+        # Отправляем в зеркальную группу
         try:
             msg = bot.send_message(MIRROR_GROUP, text)
             
+            # Сохраняем ID сообщения в зеркале
             db = parser.load_db()
             for u in db["users"]:
                 if u["telegram_id"] == uid:
@@ -713,11 +667,14 @@ def flow(message):
         except Exception as e:
             print(f"Mirror send error: {e}")
 
-        github_save_db(db, message=f"Register user {uid} ({username})")
+        # Синхронизируем с GitHub
+        if GITHUB_ENABLED:
+            github_save_db(db, message=f"Register user {uid} ({username})")
+            signal_mod_reload()  # Сигнал моду обновить базу
 
         bot.send_message(
             chat_id,
-            "✅ Регистрация завершена\n\n💡 Используйте /getcode для получения кода входа на сервер",
+            "✅ Регистрация завершена",
             reply_markup=ReplyKeyboardRemove()
         )
         log(f"NEW USER {uid} ({s['nick']})")
@@ -726,22 +683,31 @@ def flow(message):
 
 
 def github_load_db():
+    """Загрузка базы данных из GitHub"""
+    if not GITHUB_ENABLED:
+        return {"users": []}
+    
     url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_FILE}"
     headers = {"Authorization": f"token {GITHUB_TOKEN}"}
     r = requests.get(url, headers=headers)
     if r.status_code != 200:
-        return {"users": []}
+        return {"users": []}  # если файла нет
     data = r.json()
     content = base64.b64decode(data['content']).decode()
     return json.loads(content)
 
 def github_save_db(db, message="Update database"):
+    """Сохранение базы данных в GitHub"""
+    if not GITHUB_ENABLED:
+        return False
+    
     url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_FILE}"
     headers = {"Authorization": f"token {GITHUB_TOKEN}"}
 
     r = requests.get(url, headers=headers)
     sha = r.json().get("sha") if r.status_code == 200 else None
 
+    # ВАЖНО: ensure_ascii=False + utf-8
     content = base64.b64encode(
         json.dumps(db, indent=4, ensure_ascii=False).encode("utf-8")
     ).decode()
@@ -758,6 +724,11 @@ def github_save_db(db, message="Update database"):
     return r.status_code in (200, 201)
 
 def sync_github_to_local():
+    """Синхронизация базы данных из GitHub в локальный файл"""
+    if not GITHUB_ENABLED:
+        print("⚠ GitHub sync disabled")
+        return
+    
     try:
         db = github_load_db()
 
@@ -770,10 +741,75 @@ def sync_github_to_local():
         print(f"❌ GitHub sync failed: {e}")
 
 
+# ============== AUTH SYSTEM ==============
+
+def signal_mod_reload():
+    """Сигнал моду перечитать базу данных через RCON"""
+    try:
+        with MCRcon(RCON_HOST, RCON_PASSWORD, port=RCON_PORT) as mcr:
+            resp = mcr.command("authmod reload")
+            print(f"RCON: authmod reload -> {resp}")
+            return True
+    except Exception as e:
+        print(f"RCON ERROR: authmod reload -> {e}")
+        return False
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith("kick_"))
+def handle_not_me_kick(call):
+    """Обработка кнопки 'Это не я ⚠️'"""
+    try:
+        nick = call.data.replace("kick_", "")
+        
+        # Находим игрока в базе
+        user = find_user(nick)
+        if not user:
+            bot.answer_callback_query(call.id, "❌ Пользователь не найден")
+            return
+        
+        # Кикаем игрока через RCON
+        try:
+            with MCRcon(RCON_HOST, RCON_PASSWORD, port=RCON_PORT) as mcr:
+                mcr.command(f"kick {nick} Сессия отклонена владельцем аккаунта")
+                mcr.command(f"authmod clearsession {nick}")
+                print(f"RCON: kicked {nick} and cleared session")
+        except Exception as e:
+            print(f"RCON error kicking {nick}: {e}")
+            bot.answer_callback_query(call.id, "❌ Ошибка RCON")
+            return
+        
+        # Редактируем сообщение (убираем кнопку)
+        bot.edit_message_text(
+            chat_id=call.message.chat.id,
+            message_id=call.message.message_id,
+            text=f"🚫 Игрок {nick} кикнут с сервера.\n\n"
+                 f"Сессия сброшена. При следующем входе потребуется код подтверждения."
+        )
+        
+        bot.answer_callback_query(call.id, "✅ Игрок кикнут!")
+        log(f"Player {nick} kicked by owner (telegram_id: {call.from_user.id})")
+        
+    except Exception as e:
+        print(f"Error in handle_not_me_kick: {e}")
+        bot.answer_callback_query(call.id, "❌ Произошла ошибка")
+
+
 if __name__ == "__main__":
-    print("🤖 BOT STARTED")
-    print("📡 Flask API: http://0.0.0.0:5000")
-    print("💡 Для публичного доступа используйте ngrok:")
-    print("   ngrok http 5000")
-    sync_github_to_local()
+    print("🤖 BOT STARTING...")
+    
+    # Проверяем наличие base.jsonc
+    try:
+        with open("base.jsonc", "r", encoding="utf8") as f:
+            json.load(f)
+        print("✓ base.jsonc found and valid")
+    except FileNotFoundError:
+        print("⚠ base.jsonc not found, creating empty...")
+        with open("base.jsonc", "w", encoding="utf8") as f:
+            json.dump({"users": []}, f, indent=4, ensure_ascii=False)
+    except Exception as e:
+        print(f"❌ base.jsonc error: {e}")
+    
+    if GITHUB_ENABLED:
+        sync_github_to_local()
+    
+    print("🤖 BOT STARTED - waiting for messages...")
     bot.infinity_polling()
