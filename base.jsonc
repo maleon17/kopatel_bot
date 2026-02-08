@@ -71,6 +71,15 @@
             "kit": "🪖 Воин",
             "banned": false,
             "mirror_msg": 22
+        },
+        {
+            "telegram_id": 8428312932,
+            "username": "hisvas1",
+            "minecraft": "hisvas",
+            "faction": "🔵 Синие",
+            "kit": "🚁 Оператор БПЛА",
+            "banned": false,
+            "mirror_msg": 35
         }
     ]
 }
