@@ -342,6 +342,7 @@ def cmd_sync_whitelist(message):
             error_count += 1
     
     bot.send_message(
+
         message.chat.id,
         f"✅ Синхронизация завершена!\n\n"
         f"📊 Статистика:\n"
@@ -645,4 +646,44 @@ def github_load_db():
 
 def github_save_db(db, message="Update database"):
     """Сохранение базы данных в GitHub"""
-  
+    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_FILE}"
+    headers = {"Authorization": f"token {GITHUB_TOKEN}"}
+
+    r = requests.get(url, headers=headers)
+    sha = r.json().get("sha") if r.status_code == 200 else None
+
+    # ВАЖНО: ensure_ascii=False + utf-8
+    content = base64.b64encode(
+        json.dumps(db, indent=4, ensure_ascii=False).encode("utf-8")
+    ).decode()
+
+    payload = {
+        "message": message,
+        "content": content
+    }
+
+    if sha:
+        payload["sha"] = sha
+
+    r = requests.put(url, headers=headers, json=payload)
+    return r.status_code in (200, 201)
+
+def sync_github_to_local():
+    """Синхронизация базы данных из GitHub в локальный файл"""
+    try:
+        db = github_load_db()
+
+        with open("base.jsonc", "w", encoding="utf8") as f:
+            json.dump(db, f, indent=4, ensure_ascii=False)
+
+        print("✅ GitHub → local DB synced")
+
+    except Exception as e:
+        print(f"❌ GitHub sync failed: {e}")
+
+
+if __name__ == "__main__":
+    print("🤖 BOT STARTED")
+    sync_github_to_local()
+    bot.infinity_polling()
+
