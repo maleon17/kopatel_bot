@@ -39,7 +39,18 @@ def rcon_process_worker(queue, host, port, password):
         if cmd is None:  # сигнал для завершения процесса
             break
         try:
-            action, nick = cmd
+            action = cmd[0]
+            
+            # Для custom команды второй параметр - сама команда целиком
+            if action == "custom":
+                command = cmd[1]
+                with MCRcon(host, password, port=port) as mcr:
+                    resp = mcr.command(command)
+                    print(f"RCON: {command} -> {resp}")
+                continue
+            
+            # Для остальных команд второй параметр - ник
+            nick = cmd[1]
             if not nick:
                 continue
             with MCRcon(host, password, port=port) as mcr:
@@ -91,6 +102,10 @@ def rcon_op(nick):
 
 def rcon_deop(nick):
     rcon_queue.put(("deop", nick))
+
+def rcon_custom_command(command):
+    """Отправка произвольной команды через RCON"""
+    rcon_queue.put(("custom", command))
 
 
 @bot.message_handler(commands=["start"])
@@ -408,6 +423,71 @@ def cmd_deop(message):
     )
     log(f"OP removed from {uid} ({minecraft_nick})")
 
+# ---------------- CUSTOM COMMAND ----------------
+@bot.message_handler(commands=["command", "cmd"])
+def cmd_custom_command(message):
+    if message.from_user.id not in ADMINS:
+        bot.reply_to(message, "❌ У вас нет прав для этой команды.")
+        return
+
+    args = message.text.split(maxsplit=1)
+    if len(args) < 2:
+        bot.reply_to(message, "⚠ Использование: /command <minecraft команда>\n\n"
+                              "Примеры:\n"
+                              "/command tp slastika UlanaFo\n"
+                              "/command tp b_b_e_e_a_a_u_u_t_t_y_y nikd134\n"
+                              "/command give 2091726116 diamond 64\n"
+                              "/command gamemode creative maleon17")
+        return
+
+    command = args[1].strip()
+    original_command = command
+    
+    # Разбиваем команду на слова
+    words = command.split()
+    db = parser.load_db()
+    
+    # Проходим по каждому слову и пытаемся найти пользователя
+    converted_words = []
+    conversions = []  # для логирования
+    
+    for word in words:
+        user = find_user(word)
+        if user and user.get("minecraft"):
+            # Нашли пользователя - заменяем на его Minecraft ник
+            converted_words.append(user["minecraft"])
+            conversions.append(f"{word} → {user['minecraft']}")
+        else:
+            # Не нашли - оставляем как есть
+            converted_words.append(word)
+    
+    # Собираем команду обратно
+    final_command = " ".join(converted_words)
+    
+    # Отправляем команду
+    rcon_custom_command(final_command)
+    
+    # Формируем ответ
+    if conversions:
+        conversion_text = "\n".join([f"• {c}" for c in conversions])
+        bot.send_message(
+            message.chat.id,
+            f"✅ Команда отправлена на сервер!\n\n"
+            f"📝 Оригинал:\n<code>{original_command}</code>\n\n"
+            f"🔄 Конвертировано:\n{conversion_text}\n\n"
+            f"📤 Итоговая команда:\n<code>{final_command}</code>",
+            parse_mode="HTML"
+        )
+    else:
+        bot.send_message(
+            message.chat.id,
+            f"✅ Команда отправлена на сервер!\n\n"
+            f"📤 Команда:\n<code>{final_command}</code>",
+            parse_mode="HTML"
+        )
+    
+    log(f"Custom command: {final_command} (by {message.from_user.id})")
+
 @bot.message_handler(func=lambda m: True)
 def flow(message):
     chat_id = message.chat.id 
@@ -479,9 +559,15 @@ def flow(message):
         return
 
     if message.text == "Да ✅":
+        username = message.from_user.username
+        if username:
+            username = f"@{username}" if not username.startswith("@") else username
+        else:
+            username = "unknown"
+        
         user = {
             "telegram_id": uid,
-            "username": message.from_user.username or "unknown",
+            "username": username,
             "minecraft": s["nick"],
             "faction": s["faction"],
             "kit": s["kit"],
@@ -512,7 +598,7 @@ def flow(message):
         text = (
             f"🆔 {uid}\n"
             f"🎮 {s['nick']}\n"
-            f"👤 @{message.from_user.username or 'unknown'}\n"
+            f"👤 {username}\n"
             f"🏳 {s['faction']}\n"
             f"🧰 {s['kit']}\n"
             f"🚫 banned: false"
@@ -559,43 +645,4 @@ def github_load_db():
 
 def github_save_db(db, message="Update database"):
     """Сохранение базы данных в GitHub"""
-    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_FILE}"
-    headers = {"Authorization": f"token {GITHUB_TOKEN}"}
-
-    r = requests.get(url, headers=headers)
-    sha = r.json().get("sha") if r.status_code == 200 else None
-
-    # ВАЖНО: ensure_ascii=False + utf-8
-    content = base64.b64encode(
-        json.dumps(db, indent=4, ensure_ascii=False).encode("utf-8")
-    ).decode()
-
-    payload = {
-        "message": message,
-        "content": content
-    }
-
-    if sha:
-        payload["sha"] = sha
-
-    r = requests.put(url, headers=headers, json=payload)
-    return r.status_code in (200, 201)
-
-def sync_github_to_local():
-    """Синхронизация базы данных из GitHub в локальный файл"""
-    try:
-        db = github_load_db()
-
-        with open("base.jsonc", "w", encoding="utf8") as f:
-            json.dump(db, f, indent=4, ensure_ascii=False)
-
-        print("✅ GitHub → local DB synced")
-
-    except Exception as e:
-        print(f"❌ GitHub sync failed: {e}")
-
-
-if __name__ == "__main__":
-    print("🤖 BOT STARTED")
-    sync_github_to_local()
-    bot.infinity_polling()
+ 
