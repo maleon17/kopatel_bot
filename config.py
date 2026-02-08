@@ -1,7 +1,7 @@
-# future
-RCON_HOST = ""
-RCON_PORT = 25575
-RCON_PASSWORD = ""
+# RCON
+RCON_HOST = "donator2.gamely.pro"
+RCON_PORT = 30958
+RCON_PASSWORD = "govno1488"
 
 BOT_TOKEN = "8214138180:AAFMNpZLq_srrSWwJBK-obXWF4ARBaleV_4"
 
