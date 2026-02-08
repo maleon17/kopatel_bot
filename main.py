@@ -15,6 +15,7 @@ from parser import ban_user, unban_user, find_user, is_banned, add_user
 from logger import log
 from telebot.types import ReplyKeyboardRemove
 from config import BOT_TOKEN, ADMINS, FACTIONS, KITS, MIRROR_GROUP, RCON_HOST, RCON_PORT, RCON_PASSWORD
+
 sys.path.append("/data/data/com.termux/files/home/github_lib")
 from github import GITHUB_TOKEN, GITHUB_REPO, GITHUB_FILE
 
@@ -25,40 +26,6 @@ logging.getLogger("telebot").setLevel(logging.CRITICAL)
 bot = telebot.TeleBot(BOT_TOKEN)
 
 sessions = {}
-
-# -------------- RCON функции ---------------
-
-def rcon_ban(nick: str):
-    try:
-        with MCRcon(RCON_HOST, RCON_PASSWORD, port=RCON_PORT) as mcr:
-            resp = mcr.command(f"ban {nick}")
-            print(f"RCON: ban {nick} -> {resp}")
-    except Exception as e:
-        print(f"RCON ERROR: ban {nick} -> {e}")
-
-def rcon_unban(nick: str):
-    try:
-        with MCRcon(RCON_HOST, RCON_PASSWORD, port=RCON_PORT) as mcr:
-            resp = mcr.command(f"pardon {nick}")
-            print(f"RCON: unban {nick} -> {resp}")
-    except Exception as e:
-        print(f"RCON ERROR: unban {nick} -> {e}")
-
-def rcon_del_user(nick: str):
-    try:
-        with MCRcon(RCON_HOST, RCON_PASSWORD, port=RCON_PORT) as mcr:
-            resp = mcr.command(f"whitelist remove {nick}")
-            print(f"RCON: del {nick} -> {resp}")
-    except Exception as e:
-        print(f"RCON ERROR: del {nick} -> {e}")
-
-def rcon_whitelist_add(nick):
-    try:
-        with MCRcon(RCON_HOST, RCON_PASSWORD, port=RCON_PORT) as mcr:
-            resp = mcr.command(f"whitelist add {nick}")
-            print(f"RCON: whitelist add {nick} -> {resp}")
-    except Exception as e:
-        print(f"RCON ERROR: whitelist add {nick} ->", e)
 
 # ----------------- RCON PROCESS -------------------
 
@@ -99,7 +66,7 @@ rcon_process = multiprocessing.Process(
 )
 rcon_process.start()
 
-# --------- Функции для добавления команд ---------
+# --------- Функции для добавления команд в очередь ---------
 
 def rcon_ban(nick):
     rcon_queue.put(("ban", nick))
@@ -113,22 +80,16 @@ def rcon_del_user(nick):
 def rcon_whitelist_add(nick):
     rcon_queue.put(("whitelist", nick))
 
-def main_menu(chat):
-    kb = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    kb.add("Начать заново")
-    bot.send_message(chat, "Меню:", reply_markup=kb)
-
 
 @bot.message_handler(commands=["start"])
 def start(message):
-    
     try:
         sync_github_to_local()
         db = github_load_db()
     except Exception as e:
         print("GitHub load error:", e)
         db = {"users": []}
-    
+
     # игнорируем группы
     if message.chat.type != "private":
         return
@@ -210,7 +171,7 @@ def cmd_ban(message):
             parse_mode="HTML"
         )
         parser.save_db(db)
-        github_save_db(db, message=f"Update: user {uid} registered/banned/unbanned")
+        github_save_db(db, message=f"Ban user {uid}")
     else:
         bot.reply_to(message, "❌ Не удалось забанить пользователя.")
 
@@ -237,7 +198,6 @@ def cmd_unban(message):
         name = user.get("minecraft") or user.get("username") or str(uid)
         if user.get("minecraft"):
             rcon_unban(user["minecraft"])
-
 
         # --- обновляем сообщение в зеркале ---
         db = parser.load_db()
@@ -273,7 +233,7 @@ def cmd_unban(message):
             parse_mode="HTML"
         )
         parser.save_db(db)
-        github_save_db(db, message=f"Update: user {uid} registered/banned/unbanned")
+        github_save_db(db, message=f"Unban user {uid}")
     else:
         bot.reply_to(message, "❌ Не удалось разбанить пользователя.")
 
@@ -312,7 +272,7 @@ def cmd_deluser(message):
     db["users"] = [u for u in db["users"] if u["telegram_id"] != uid]
 
     parser.save_db(db)
-    github_save_db(db, message=f"DELETE user {uid}")
+    github_save_db(db, message=f"Delete user {uid}")
 
     if user.get("minecraft"):
         rcon_del_user(user["minecraft"])
@@ -329,6 +289,10 @@ def flow(message):
     user_id = message.from_user.id
     uid = message.from_user.id
 
+    # Игнорируем сообщения в группах
+    if message.chat.type != "private":
+        return
+
     if parser.is_banned(uid):
         return
 
@@ -341,7 +305,7 @@ def flow(message):
     if "nick" not in s:
         nick = message.text.strip()
         if " " in nick or len(nick) < 3 or len(nick) > 16:
-            bot.send_message(message.chat.id, "Некорректный ник.")
+            bot.send_message(message.chat.id, "❌ Некорректный ник. Введите ник от 3 до 16 символов без пробелов.")
             return
 
         s["nick"] = nick
@@ -355,6 +319,7 @@ def flow(message):
     # фракция
     if "faction" not in s:
         if message.text not in FACTIONS:
+            bot.send_message(message.chat.id, "❌ Выберите фракцию из предложенных кнопок.")
             return
 
         s["faction"] = message.text
@@ -369,6 +334,7 @@ def flow(message):
     # kit
     if "kit" not in s:
         if message.text not in KITS:
+            bot.send_message(message.chat.id, "❌ Выберите kit из предложенных кнопок.")
             return
 
         s["kit"] = message.text
@@ -386,7 +352,7 @@ def flow(message):
         sessions.pop(uid)
         start(message)
         return
-        
+
     if message.text == "Да ✅":
         user = {
             "telegram_id": uid,
@@ -399,7 +365,7 @@ def flow(message):
 
         # Загружаем базу
         db = parser.load_db()
-        
+
         # Проверяем, есть ли уже пользователь
         exists = False
         for i, u in enumerate(db["users"]):
@@ -417,40 +383,46 @@ def flow(message):
 
         # Сохраняем базу
         parser.save_db(db)
-        github_save_db(db, message=f"Update by {message.from_user.username}")
 
         text = (
             f"🆔 {uid}\n"
             f"🎮 {s['nick']}\n"
-            f"👤 @{message.from_user.username}\n"
+            f"👤 @{message.from_user.username or 'unknown'}\n"
             f"🏳 {s['faction']}\n"
             f"🧰 {s['kit']}\n"
             f"🚫 banned: false"
         )
 
-        msg = bot.send_message(MIRROR_GROUP, text)
+        # Отправляем в зеркальную группу
+        try:
+            msg = bot.send_message(MIRROR_GROUP, text)
+            
+            # Сохраняем ID сообщения в зеркале
+            db = parser.load_db()
+            for u in db["users"]:
+                if u["telegram_id"] == uid:
+                    u["mirror_msg"] = msg.message_id
+                    break
+            
+            parser.save_db(db)
+        except Exception as e:
+            print(f"Mirror send error: {e}")
 
-        db = parser.load_db()
-
-        for u in db["users"]:
-            if u["telegram_id"] == uid:
-                u["mirror_msg"] = msg.message_id
-
-        parser.save_db(db)
-        github_save_db(db, message=f"Update by {message.from_user.username}")
-
+        # Синхронизируем с GitHub
+        github_save_db(db, message=f"Register user {uid} ({message.from_user.username})")
 
         bot.send_message(
             chat_id,
             "✅ Регистрация завершена",
             reply_markup=ReplyKeyboardRemove()
         )
-        log(f"NEW USER {uid}")
+        log(f"NEW USER {uid} ({s['nick']})")
         sessions.pop(uid)
         return
 
 
 def github_load_db():
+    """Загрузка базы данных из GitHub"""
     url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_FILE}"
     headers = {"Authorization": f"token {GITHUB_TOKEN}"}
     r = requests.get(url, headers=headers)
@@ -461,6 +433,7 @@ def github_load_db():
     return json.loads(content)
 
 def github_save_db(db, message="Update database"):
+    """Сохранение базы данных в GitHub"""
     url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_FILE}"
     headers = {"Authorization": f"token {GITHUB_TOKEN}"}
 
@@ -484,18 +457,20 @@ def github_save_db(db, message="Update database"):
     return r.status_code in (200, 201)
 
 def sync_github_to_local():
+    """Синхронизация базы данных из GitHub в локальный файл"""
     try:
         db = github_load_db()
 
         with open("base.jsonc", "w", encoding="utf8") as f:
             json.dump(db, f, indent=4, ensure_ascii=False)
 
-        print("GitHub → local DB synced")
+        print("✅ GitHub → local DB synced")
 
     except Exception as e:
-        print("GitHub sync failed:", e)
+        print(f"❌ GitHub sync failed: {e}")
 
 
-print("BOT STARTED")
-sync_github_to_local()
-bot.infinity_polling()
+if __name__ == "__main__":
+    print("🤖 BOT STARTED")
+    sync_github_to_local()
+    bot.infinity_polling()
