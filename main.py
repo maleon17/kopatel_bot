@@ -8,19 +8,13 @@ import logging
 import queue
 import threading
 import multiprocessing 
-import string
-import random
-from datetime import datetime, timedelta
 from mcrcon import MCRcon
 from telebot import types
 import parser
-from parser import ban_user, unban_user, find_user, is_banned, add_user
+from parser import ban_user, unban_user, find_user, is_banned, add_user, generate_verification_code, get_verification_code
 from logger import log
 from telebot.types import ReplyKeyboardRemove
 from config import BOT_TOKEN, ADMINS, FACTIONS, KITS, MIRROR_GROUP, RCON_HOST, RCON_PORT, RCON_PASSWORD
-
-# Flask для API
-from flask import Flask, request, jsonify
 
 sys.path.append("/data/data/com.termux/files/home/github_lib")
 from github import GITHUB_TOKEN, GITHUB_REPO, GITHUB_FILE
@@ -28,95 +22,10 @@ from github import GITHUB_TOKEN, GITHUB_REPO, GITHUB_FILE
 
 logging.getLogger("urllib3").setLevel(logging.CRITICAL)
 logging.getLogger("telebot").setLevel(logging.CRITICAL)
-logging.getLogger("werkzeug").setLevel(logging.CRITICAL)
 
 bot = telebot.TeleBot(BOT_TOKEN)
-app = Flask(__name__)
 
 sessions = {}
-
-# ----------------- FLASK API -----------------
-
-@app.route('/check_code', methods=['GET'])
-def check_code():
-    """API для проверки кода подтверждения модом"""
-    nick = request.args.get('nick')
-    code = request.args.get('code')
-    
-    if not nick or not code:
-        return jsonify({"valid": False, "error": "Missing parameters"})
-    
-    # Ищем пользователя по minecraft нику
-    user = find_user(nick)
-    
-    if not user:
-        return jsonify({"valid": False, "error": "User not found"})
-    
-    # Проверяем код
-    if not user.get("verification_code"):
-        return jsonify({"valid": False, "error": "No code generated"})
-    
-    if user["verification_code"].upper() != code.upper():
-        return jsonify({"valid": False, "error": "Invalid code"})
-    
-    # Проверяем срок действия
-    if "code_expires" in user:
-        expires = datetime.fromisoformat(user["code_expires"])
-        if datetime.now() > expires:
-            return jsonify({"valid": False, "error": "Code expired"})
-    
-    # Помечаем код как использованный и обновляем время
-    db = parser.load_db()
-    for u in db["users"]:
-        if u["telegram_id"] == user["telegram_id"]:
-            u["code_used"] = True
-            u["last_verified"] = datetime.now().isoformat()
-            break
-    
-    parser.save_db(db)
-    
-    # Уведомляем пользователя в Telegram
-    try:
-        bot.send_message(
-            user["telegram_id"],
-            f"✅ Вход на сервер подтверждён!\n"
-            f"🎮 Ник: {nick}\n"
-            f"⏰ Время: {datetime.now().strftime('%H:%M:%S')}"
-        )
-    except:
-        pass
-    
-    return jsonify({"valid": True, "username": user.get("username"), "telegram_id": user["telegram_id"]})
-
-@app.route('/player_join', methods=['POST'])
-def player_join():
-    """API для уведомлений о входе игрока (опционально)"""
-    data = request.get_json()
-    nick = data.get('nick')
-    
-    user = find_user(nick)
-    if user:
-        try:
-            bot.send_message(
-                user["telegram_id"],
-                f"🔔 Попытка входа на сервер\n"
-                f"🎮 Ник: {nick}\n"
-                f"⏰ Время: {datetime.now().strftime('%H:%M:%S')}\n\n"
-                f"Если это не вы, срочно смените код командой /getcode"
-            )
-        except:
-            pass
-    
-    return jsonify({"status": "ok"})
-
-def run_flask():
-    """Запуск Flask сервера в отдельном потоке"""
-    app.run(host='0.0.0.0', port=5000, debug=False, use_reloader=False)
-
-# Запускаем Flask в отдельном потоке
-flask_thread = threading.Thread(target=run_flask, daemon=True)
-flask_thread.start()
-print("✅ Flask API started on http://0.0.0.0:5000")
 
 # ----------------- RCON PROCESS -------------------
 
@@ -127,11 +36,12 @@ def rcon_process_worker(queue, host, port, password):
     """Процесс для выполнения команд RCON"""
     while True:
         cmd = queue.get()
-        if cmd is None:
+        if cmd is None:  # сигнал для завершения процесса
             break
         try:
             action = cmd[0]
             
+            # Для custom команды второй параметр - сама команда целиком
             if action == "custom":
                 command = cmd[1]
                 with MCRcon(host, password, port=port) as mcr:
@@ -139,6 +49,7 @@ def rcon_process_worker(queue, host, port, password):
                     print(f"RCON: {command} -> {resp}")
                 continue
             
+            # Для остальных команд второй параметр - ник
             nick = cmd[1]
             if not nick:
                 continue
@@ -164,12 +75,15 @@ def rcon_process_worker(queue, host, port, password):
         except Exception as e:
             print("RCON ERROR:", e)
 
+# Запуск процесса один раз при старте бота
 rcon_process = multiprocessing.Process(
     target=rcon_process_worker, 
     args=(rcon_queue, RCON_HOST, RCON_PORT, RCON_PASSWORD),
     daemon=True
 )
 rcon_process.start()
+
+# --------- Функции для добавления команд в очередь ---------
 
 def rcon_ban(nick):
     rcon_queue.put(("ban", nick))
@@ -190,51 +104,9 @@ def rcon_deop(nick):
     rcon_queue.put(("deop", nick))
 
 def rcon_custom_command(command):
+    """Отправка произвольной команды через RCON"""
     rcon_queue.put(("custom", command))
 
-def generate_code():
-    """Генерирует случайный 6-значный код"""
-    chars = string.ascii_uppercase + string.digits
-    chars = chars.replace('O', '').replace('I', '').replace('0', '').replace('1', '')
-    return ''.join(random.choice(chars) for _ in range(6))
-
-@bot.message_handler(commands=["getcode", "code"])
-def cmd_getcode(message):
-    if message.chat.type != "private":
-        return
-    
-    uid = message.from_user.id
-    user = find_user(uid)
-    
-    if not user:
-        bot.reply_to(message, "❌ Вы не зарегистрированы. Используйте /start")
-        return
-    
-    code = generate_code()
-    expires = datetime.now() + timedelta(hours=24)
-    
-    db = parser.load_db()
-    for u in db["users"]:
-        if u["telegram_id"] == uid:
-            u["verification_code"] = code
-            u["code_expires"] = expires.isoformat()
-            u["code_used"] = False
-            break
-    
-    parser.save_db(db)
-    github_save_db(db, message=f"Generate code for {uid}")
-    
-    bot.send_message(
-        message.chat.id,
-        f"🔐 <b>Код подтверждения для сервера</b>\n\n"
-        f"<code>{code}</code>\n\n"
-        f"⏰ Действителен: 24 часа\n"
-        f"📝 Введите в Minecraft:\n"
-        f"<code>/verify {code}</code>",
-        parse_mode="HTML"
-    )
-    
-    log(f"Code generated for {uid}: {code}")
 
 @bot.message_handler(commands=["start"])
 def start(message):
@@ -245,6 +117,7 @@ def start(message):
         print("GitHub load error:", e)
         db = {"users": []}
 
+    # игнорируем группы
     if message.chat.type != "private":
         return
 
@@ -255,8 +128,7 @@ def start(message):
         bot.send_message(
             message.chat.id,
             f"Пользователь уже зарегистрирован ❌\n"
-            f"{existing['minecraft']}, вы выбрали:\nФракция: {existing['faction']}\nKit: {existing['kit']}\n\n"
-            f"💡 Используйте /getcode для получения кода входа на сервер",
+            f"{existing['minecraft']}, вы выбрали:\nФракция: {existing['faction']}\nKit: {existing['kit']}",
             reply_markup=ReplyKeyboardRemove()
         )
         return
@@ -268,6 +140,8 @@ def start(message):
         reply_markup=ReplyKeyboardRemove()
     )
 
+
+# ---------------- BAN ----------------
 @bot.message_handler(commands=["ban"])
 def cmd_ban(message):
     if message.from_user.id not in ADMINS:
@@ -291,7 +165,9 @@ def cmd_ban(message):
         if user.get("minecraft"):
             rcon_ban(user["minecraft"]) 
 
+        # --- обновляем сообщение в зеркале ---
         db = parser.load_db()
+        # находим пользователя в базе
         for u in db["users"]:
             if u["telegram_id"] == uid:
                 u["banned"] = True
@@ -302,7 +178,7 @@ def cmd_ban(message):
                 text = (
                     f"🆔 {uid}\n"
                     f"🎮 {user.get('minecraft')}\n"
-                    f"👤 {user.get('username')}\n"
+                    f"👤 @{user.get('username')}\n"
                     f"🏳 {user.get('faction')}\n"
                     f"🧰 {user.get('kit')}\n"
                     f"🚫 banned: true"
@@ -326,6 +202,7 @@ def cmd_ban(message):
     else:
         bot.reply_to(message, "❌ Не удалось забанить пользователя.")
 
+# ---------------- UNBAN ----------------
 @bot.message_handler(commands=["unban"])
 def cmd_unban(message):
     if message.from_user.id not in ADMINS:
@@ -349,7 +226,9 @@ def cmd_unban(message):
         if user.get("minecraft"):
             rcon_unban(user["minecraft"])
 
+        # --- обновляем сообщение в зеркале ---
         db = parser.load_db()
+        # находим пользователя в базе
         for u in db["users"]:
             if u["telegram_id"] == uid:
                 u["banned"] = False
@@ -361,7 +240,7 @@ def cmd_unban(message):
                 text = (
                     f"🆔 {uid}\n"
                     f"🎮 {user.get('minecraft')}\n"
-                    f"👤 {user.get('username')}\n"
+                    f"👤 @{user.get('username')}\n"
                     f"🏳 {user.get('faction')}\n"
                     f"🧰 {user.get('kit')}\n"
                     f"🚫 banned: false"
@@ -385,6 +264,7 @@ def cmd_unban(message):
     else:
         bot.reply_to(message, "❌ Не удалось разбанить пользователя.")
 
+# ---------------- DEL USER ----------------
 @bot.message_handler(commands=["deluser"])
 def cmd_deluser(message):
     if message.from_user.id not in ADMINS:
@@ -399,7 +279,6 @@ def cmd_deluser(message):
     target = args[1].strip()
     user = find_user(target)
 
-
     if not user:
         bot.reply_to(message, "❌ Пользователь не найден.")
         return
@@ -409,12 +288,14 @@ def cmd_deluser(message):
 
     db = parser.load_db()
 
+    # --- удаляем mirror сообщение ---
     if "mirror_msg" in user and MIRROR_GROUP:
         try:
             bot.delete_message(MIRROR_GROUP, user["mirror_msg"])
         except Exception as e:
             print("Mirror delete error:", e)
 
+    # --- удаляем из локальной базы ---
     db["users"] = [u for u in db["users"] if u["telegram_id"] != uid]
 
     parser.save_db(db)
@@ -429,6 +310,7 @@ def cmd_deluser(message):
         parse_mode="HTML"
     )
 
+# ---------------- SYNC WHITELIST ----------------
 @bot.message_handler(commands=["syncwhitelist"])
 def cmd_sync_whitelist(message):
     if message.from_user.id not in ADMINS:
@@ -443,16 +325,18 @@ def cmd_sync_whitelist(message):
     error_count = 0
     
     for user in db["users"]:
+        # Пропускаем забаненных
         if user.get("banned", False):
             continue
         
+        # Пропускаем пользователей без Minecraft ника
         if not user.get("minecraft"):
             continue
         
         try:
             rcon_whitelist_add(user["minecraft"])
             added_count += 1
-            time.sleep(0.1)
+            time.sleep(0.1)  # небольшая задержка между командами
         except Exception as e:
             print(f"Error adding {user['minecraft']} to whitelist: {e}")
             error_count += 1
@@ -467,6 +351,7 @@ def cmd_sync_whitelist(message):
         f"• Забанено: {sum(1 for u in db['users'] if u.get('banned', False))}"
     )
 
+# ---------------- OP ----------------
 @bot.message_handler(commands=["op"])
 def cmd_op(message):
     if message.from_user.id not in ADMINS:
@@ -502,6 +387,7 @@ def cmd_op(message):
     )
     log(f"OP granted to {uid} ({minecraft_nick})")
 
+# ---------------- DEOP ----------------
 @bot.message_handler(commands=["deop"])
 def cmd_deop(message):
     if message.from_user.id not in ADMINS:
@@ -514,6 +400,7 @@ def cmd_deop(message):
         return
 
     target = args[1].strip()
+
     user = find_user(target)
     
     if not user:
@@ -537,6 +424,7 @@ def cmd_deop(message):
     )
     log(f"OP removed from {uid} ({minecraft_nick})")
 
+# ---------------- CUSTOM COMMAND ----------------
 @bot.message_handler(commands=["command", "cmd"])
 def cmd_custom_command(message):
     if message.from_user.id not in ADMINS:
@@ -556,24 +444,31 @@ def cmd_custom_command(message):
     command = args[1].strip()
     original_command = command
     
+    # Разбиваем команду на слова
     words = command.split()
     db = parser.load_db()
     
+    # Проходим по каждому слову и пытаемся найти пользователя
     converted_words = []
-    conversions = []
+    conversions = []  # для логирования
     
     for word in words:
         user = find_user(word)
         if user and user.get("minecraft"):
+            # Нашли пользователя - заменяем на его Minecraft ник
             converted_words.append(user["minecraft"])
             conversions.append(f"{word} → {user['minecraft']}")
         else:
+            # Не нашли - оставляем как есть
             converted_words.append(word)
     
+    # Собираем команду обратно
     final_command = " ".join(converted_words)
     
+    # Отправляем команду
     rcon_custom_command(final_command)
     
+    # Формируем ответ
     if conversions:
         conversion_text = "\n".join([f"• {c}" for c in conversions])
         bot.send_message(
@@ -594,12 +489,130 @@ def cmd_custom_command(message):
     
     log(f"Custom command: {final_command} (by {message.from_user.id})")
 
+# ---------------- GET CODE ----------------
+@bot.message_handler(commands=["getcode", "code"])
+def cmd_get_code(message):
+    """Генерация кода верификации для входа на сервер"""
+    
+    # Игнорируем группы
+    if message.chat.type != "private":
+        return
+    
+    uid = message.from_user.id
+    
+    # Проверяем, зарегистрирован ли пользователь
+    user = find_user(uid)
+    if not user:
+        bot.send_message(
+            message.chat.id,
+            "❌ Вы не зарегистрированы!\n"
+            "Используйте /start для регистрации."
+        )
+        return
+    
+    # Проверяем, забанен ли пользователь
+    if is_banned(uid):
+        bot.send_message(
+            message.chat.id,
+            "🚫 Вы забанены и не можете получить код верификации."
+        )
+        return
+    
+    # Проверяем, есть ли действующий код
+    existing_code = get_verification_code(uid)
+    
+    if existing_code:
+        # Есть действующий код
+        bot.send_message(
+            message.chat.id,
+            f"🔐 <b>Ваш код верификации:</b>\n\n"
+            f"<code>{existing_code}</code>\n\n"
+            f"⏰ Код действителен ещё 24 часа\n"
+            f"📝 Введите в Minecraft:\n"
+            f"<code>/verify {existing_code}</code>\n\n"
+            f"💡 Для получения нового кода используйте /newcode",
+            parse_mode="HTML"
+        )
+        log(f"User {uid} requested existing code")
+    else:
+        # Генерируем новый код
+        code = generate_verification_code(uid)
+        
+        if code:
+            bot.send_message(
+                message.chat.id,
+                f"🔐 <b>Код верификации создан!</b>\n\n"
+                f"<code>{code}</code>\n\n"
+                f"⏰ Действителен: 24 часа\n"
+                f"📝 Введите в Minecraft:\n"
+                f"<code>/verify {code}</code>\n\n"
+                f"⚠️ Не передавайте этот код никому!",
+                parse_mode="HTML"
+            )
+            log(f"New verification code generated for user {uid}")
+        else:
+            bot.send_message(
+                message.chat.id,
+                "❌ Ошибка генерации кода. Попробуйте позже."
+            )
+
+# ---------------- NEW CODE ----------------
+@bot.message_handler(commands=["newcode"])
+def cmd_new_code(message):
+    """Генерация нового кода (принудительно)"""
+    
+    # Игнорируем группы
+    if message.chat.type != "private":
+        return
+    
+    uid = message.from_user.id
+    
+    # Проверяем, зарегистрирован ли пользователь
+    user = find_user(uid)
+    if not user:
+        bot.send_message(
+            message.chat.id,
+            "❌ Вы не зарегистрированы!\n"
+            "Используйте /start для регистрации."
+        )
+        return
+    
+    # Проверяем, забанен ли пользователь
+    if is_banned(uid):
+        bot.send_message(
+            message.chat.id,
+            "🚫 Вы забанены и не можете получить код верификации."
+        )
+        return
+    
+    # Генерируем новый код (даже если старый ещё действует)
+    code = generate_verification_code(uid)
+    
+    if code:
+        bot.send_message(
+            message.chat.id,
+            f"🔐 <b>Новый код верификации создан!</b>\n\n"
+            f"<code>{code}</code>\n\n"
+            f"⏰ Действителен: 24 часа\n"
+            f"📝 Введите в Minecraft:\n"
+            f"<code>/verify {code}</code>\n\n"
+            f"⚠️ Старый код больше не действителен!",
+            parse_mode="HTML"
+        )
+        log(f"New verification code forcefully generated for user {uid}")
+    else:
+        bot.send_message(
+            message.chat.id,
+            "❌ Ошибка генерации кода. Попробуйте позже."
+        )
+
 @bot.message_handler(func=lambda m: True)
 def flow(message):
     chat_id = message.chat.id 
     user_id = message.from_user.id
     uid = message.from_user.id
 
+    # Игнорируем сообщения в группах
     if message.chat.type != "private":
         return
 
@@ -611,6 +624,7 @@ def flow(message):
 
     s = sessions[uid]
 
+    # ник
     if "nick" not in s:
         nick = message.text.strip()
         if " " in nick or len(nick) < 3 or len(nick) > 16:
@@ -625,6 +639,7 @@ def flow(message):
         bot.send_message(message.chat.id, "Выберите фракцию:", reply_markup=kb)
         return
 
+    # фракция
     if "faction" not in s:
         if message.text not in FACTIONS:
             bot.send_message(message.chat.id, "❌ Выберите фракцию из предложенных кнопок.")
@@ -639,6 +654,7 @@ def flow(message):
         bot.send_message(message.chat.id, "Выберите kit:", reply_markup=kb)
         return
 
+    # kit
     if "kit" not in s:
         if message.text not in KITS:
             bot.send_message(message.chat.id, "❌ Выберите kit из предложенных кнопок.")
@@ -654,6 +670,7 @@ def flow(message):
             reply_markup=kb)
         return
 
+    # подтверждение
     if message.text == "Выбрать заново ❌":
         sessions.pop(uid)
         start(message)
@@ -675,8 +692,10 @@ def flow(message):
             "banned": False
         }
 
+        # Загружаем базу
         db = parser.load_db()
 
+        # Проверяем, есть ли уже пользователь
         exists = False
         for i, u in enumerate(db["users"]):
             if u["telegram_id"] == uid:
@@ -684,12 +703,14 @@ def flow(message):
                 exists = True
                 break
 
+        # Если нового пользователя — добавляем
         if not exists:
             db["users"].append(user)
 
         if user.get("minecraft"):
             rcon_whitelist_add(user["minecraft"])
 
+        # Сохраняем базу
         parser.save_db(db)
 
         text = (
@@ -701,9 +722,11 @@ def flow(message):
             f"🚫 banned: false"
         )
 
+        # Отправляем в зеркальную группу
         try:
             msg = bot.send_message(MIRROR_GROUP, text)
             
+            # Сохраняем ID сообщения в зеркале
             db = parser.load_db()
             for u in db["users"]:
                 if u["telegram_id"] == uid:
@@ -714,11 +737,12 @@ def flow(message):
         except Exception as e:
             print(f"Mirror send error: {e}")
 
-        github_save_db(db, message=f"Register user {uid} ({username})")
+        # Синхронизируем с GitHub
+        github_save_db(db, message=f"Register user {uid} ({message.from_user.username})")
 
         bot.send_message(
             chat_id,
-            "✅ Регистрация завершена\n\n💡 Используйте /getcode для получения кода входа на сервер",
+            "✅ Регистрация завершена",
             reply_markup=ReplyKeyboardRemove()
         )
         log(f"NEW USER {uid} ({s['nick']})")
@@ -727,22 +751,25 @@ def flow(message):
 
 
 def github_load_db():
+    """Загрузка базы данных из GitHub"""
     url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_FILE}"
     headers = {"Authorization": f"token {GITHUB_TOKEN}"}
     r = requests.get(url, headers=headers)
     if r.status_code != 200:
-        return {"users": []}
+        return {"users": []}  # если файла нет
     data = r.json()
     content = base64.b64decode(data['content']).decode()
     return json.loads(content)
 
 def github_save_db(db, message="Update database"):
+    """Сохранение базы данных в GitHub"""
     url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_FILE}"
     headers = {"Authorization": f"token {GITHUB_TOKEN}"}
 
     r = requests.get(url, headers=headers)
     sha = r.json().get("sha") if r.status_code == 200 else None
 
+    # ВАЖНО: ensure_ascii=False + utf-8
     content = base64.b64encode(
         json.dumps(db, indent=4, ensure_ascii=False).encode("utf-8")
     ).decode()
@@ -759,6 +786,7 @@ def github_save_db(db, message="Update database"):
     return r.status_code in (200, 201)
 
 def sync_github_to_local():
+    """Синхронизация базы данных из GitHub в локальный файл"""
     try:
         db = github_load_db()
 
@@ -773,9 +801,6 @@ def sync_github_to_local():
 
 if __name__ == "__main__":
     print("🤖 BOT STARTED")
-    print("📡 Flask API: http://0.0.0.0:5000")
-    print("💡 Для публичного доступа используйте ngrok:")
-    print("   ngrok http 5000")
     sync_github_to_local()
     bot.infinity_polling()
 
