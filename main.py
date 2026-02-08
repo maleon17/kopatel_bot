@@ -645,4 +645,4 @@ def github_load_db():
 
 def github_save_db(db, message="Update database"):
     """Сохранение базы данных в GitHub"""
- 
+  
