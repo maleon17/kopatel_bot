@@ -16,11 +16,26 @@ def find_user(value):
     """Ищет пользователя по telegram_id, username или minecraft нику"""
     db = load_db()
     value = str(value).lower()
+    
+    # Добавляем @ если его нет (для поиска по username)
+    value_with_at = f"@{value}" if not value.startswith("@") else value
+    value_without_at = value[1:] if value.startswith("@") else value
+    
     for u in db["users"]:
-        if str(u["telegram_id"]) == value \
-           or (u.get("username") and u["username"].lower() == value) \
-           or (u.get("minecraft") and u["minecraft"].lower() == value):
+        # Поиск по telegram_id
+        if str(u["telegram_id"]) == value:
             return u
+        
+        # Поиск по username (с @ и без)
+        if u.get("username"):
+            username_lower = u["username"].lower()
+            if username_lower == value_with_at or username_lower == value_without_at:
+                return u
+        
+        # Поиск по minecraft нику
+        if u.get("minecraft") and u["minecraft"].lower() == value:
+            return u
+    
     return None
 
 def add_user(user):
