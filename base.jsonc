@@ -107,6 +107,15 @@
             "kit": "🪖 Воин",
             "banned": false,
             "mirror_msg": 39
+        },
+        {
+            "telegram_id": 6441820355,
+            "username": "@Kaktus_HJG21",
+            "minecraft": "HJG21",
+            "faction": "🔵 Синие",
+            "kit": "🪖 Воин",
+            "banned": false,
+            "mirror_msg": 40
         }
     ]
 }
