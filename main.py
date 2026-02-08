@@ -1,11 +1,5 @@
-print("=== Starting bot ===")
-
-import sys
-print("✓ sys imported")
-
 import telebot
-print("✓ telebot imported")
-
+import sys
 import requests
 import base64
 import json
@@ -13,54 +7,23 @@ import time
 import logging 
 import queue
 import threading
-import multiprocessing
-print("✓ standard libraries imported")
-
+import multiprocessing 
 from mcrcon import MCRcon
-print("✓ mcrcon imported")
-
 from telebot import types
-print("✓ telebot.types imported")
-
 import parser
 from parser import ban_user, unban_user, find_user, is_banned, add_user
-print("✓ parser imported")
-
 from logger import log
-print("✓ logger imported")
-
 from telebot.types import ReplyKeyboardRemove
-print("✓ ReplyKeyboardRemove imported")
-
 from config import BOT_TOKEN, ADMINS, FACTIONS, KITS, MIRROR_GROUP, RCON_HOST, RCON_PORT, RCON_PASSWORD
-print("✓ config imported")
 
-# GitHub импорт - делаем опциональным
-try:
-    sys.path.append("/data/data/com.termux/files/home/github_lib")
-    from github import GITHUB_TOKEN, GITHUB_REPO, GITHUB_FILE
-    GITHUB_ENABLED = True
-    print("✓ github imported (enabled)")
-except ImportError:
-    print("⚠ github.py not found - trying local")
-    try:
-        from github import GITHUB_TOKEN, GITHUB_REPO, GITHUB_FILE
-        GITHUB_ENABLED = True
-        print("✓ github imported from local (enabled)")
-    except ImportError:
-        print("⚠ github.py not found - GitHub sync disabled")
-        GITHUB_ENABLED = False
-        GITHUB_TOKEN = None
-        GITHUB_REPO = None
-        GITHUB_FILE = None
+sys.path.append("/data/data/com.termux/files/home/github_lib")
+from github import GITHUB_TOKEN, GITHUB_REPO, GITHUB_FILE
 
 
 logging.getLogger("urllib3").setLevel(logging.CRITICAL)
 logging.getLogger("telebot").setLevel(logging.CRITICAL)
-print("✓ logging configured")
 
 bot = telebot.TeleBot(BOT_TOKEN)
-print("✓ bot initialized")
 
 sessions = {}
 
@@ -113,14 +76,12 @@ def rcon_process_worker(queue, host, port, password):
             print("RCON ERROR:", e)
 
 # Запуск процесса один раз при старте бота
-print("Starting RCON process...")
 rcon_process = multiprocessing.Process(
     target=rcon_process_worker, 
     args=(rcon_queue, RCON_HOST, RCON_PORT, RCON_PASSWORD),
     daemon=True
 )
 rcon_process.start()
-print("✓ RCON process started")
 
 # --------- Функции для добавления команд в очередь ---------
 
@@ -149,15 +110,12 @@ def rcon_custom_command(command):
 
 @bot.message_handler(commands=["start"])
 def start(message):
-    if GITHUB_ENABLED:
-        try:
-            sync_github_to_local()
-            db = github_load_db()
-        except Exception as e:
-            print("GitHub load error:", e)
-            db = {"users": []}
-    else:
-        db = parser.load_db()
+    try:
+        sync_github_to_local()
+        db = github_load_db()
+    except Exception as e:
+        print("GitHub load error:", e)
+        db = {"users": []}
 
     # игнорируем группы
     if message.chat.type != "private":
@@ -220,7 +178,7 @@ def cmd_ban(message):
                 text = (
                     f"🆔 {uid}\n"
                     f"🎮 {user.get('minecraft')}\n"
-                    f"👤 {user.get('username')}\n"
+                    f"👤 @{user.get('username')}\n"
                     f"🏳 {user.get('faction')}\n"
                     f"🧰 {user.get('kit')}\n"
                     f"🚫 banned: true"
@@ -240,8 +198,7 @@ def cmd_ban(message):
             parse_mode="HTML"
         )
         parser.save_db(db)
-        if GITHUB_ENABLED:
-            github_save_db(db, message=f"Ban user {uid}")
+        github_save_db(db, message=f"Ban user {uid}")
     else:
         bot.reply_to(message, "❌ Не удалось забанить пользователя.")
 
@@ -283,7 +240,7 @@ def cmd_unban(message):
                 text = (
                     f"🆔 {uid}\n"
                     f"🎮 {user.get('minecraft')}\n"
-                    f"👤 {user.get('username')}\n"
+                    f"👤 @{user.get('username')}\n"
                     f"🏳 {user.get('faction')}\n"
                     f"🧰 {user.get('kit')}\n"
                     f"🚫 banned: false"
@@ -303,8 +260,7 @@ def cmd_unban(message):
             parse_mode="HTML"
         )
         parser.save_db(db)
-        if GITHUB_ENABLED:
-            github_save_db(db, message=f"Unban user {uid}")
+        github_save_db(db, message=f"Unban user {uid}")
     else:
         bot.reply_to(message, "❌ Не удалось разбанить пользователя.")
 
@@ -343,8 +299,7 @@ def cmd_deluser(message):
     db["users"] = [u for u in db["users"] if u["telegram_id"] != uid]
 
     parser.save_db(db)
-    if GITHUB_ENABLED:
-        github_save_db(db, message=f"Delete user {uid}")
+    github_save_db(db, message=f"Delete user {uid}")
 
     if user.get("minecraft"):
         rcon_del_user(user["minecraft"])
@@ -655,3 +610,39 @@ def flow(message):
             
             # Сохраняем ID сообщения в зеркале
             db = parser.load_db()
+            for u in db["users"]:
+                if u["telegram_id"] == uid:
+                    u["mirror_msg"] = msg.message_id
+                    break
+            
+            parser.save_db(db)
+        except Exception as e:
+            print(f"Mirror send error: {e}")
+
+        # Синхронизируем с GitHub
+        github_save_db(db, message=f"Register user {uid} ({message.from_user.username})")
+
+        bot.send_message(
+            chat_id,
+            "✅ Регистрация завершена",
+            reply_markup=ReplyKeyboardRemove()
+        )
+        log(f"NEW USER {uid} ({s['nick']})")
+        sessions.pop(uid)
+        return
+
+
+def github_load_db():
+    """Загрузка базы данных из GitHub"""
+    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_FILE}"
+    headers = {"Authorization": f"token {GITHUB_TOKEN}"}
+    r = requests.get(url, headers=headers)
+    if r.status_code != 200:
+        return {"users": []}  # если файла нет
+    data = r.json()
+    content = base64.b64decode(data['content']).decode()
+    return json.loads(content)
+
+def github_save_db(db, message="Update database"):
+    """Сохранение базы данных в GitHub"""
+ 
