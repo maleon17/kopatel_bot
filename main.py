@@ -55,6 +55,12 @@ def rcon_process_worker(queue, host, port, password):
                 elif action == "whitelist":
                     resp = mcr.command(f"whitelist add {nick}")
                     print(f"RCON: whitelist add {nick} -> {resp}")
+                elif action == "op":
+                    resp = mcr.command(f"op {nick}")
+                    print(f"RCON: op {nick} -> {resp}")
+                elif action == "deop":
+                    resp = mcr.command(f"deop {nick}")
+                    print(f"RCON: deop {nick} -> {resp}")
         except Exception as e:
             print("RCON ERROR:", e)
 
@@ -79,6 +85,12 @@ def rcon_del_user(nick):
 
 def rcon_whitelist_add(nick):
     rcon_queue.put(("whitelist", nick))
+
+def rcon_op(nick):
+    rcon_queue.put(("op", nick))
+
+def rcon_deop(nick):
+    rcon_queue.put(("deop", nick))
 
 
 @bot.message_handler(commands=["start"])
@@ -323,6 +335,78 @@ def cmd_sync_whitelist(message):
         f"• Всего в базе: {len(db['users'])}\n"
         f"• Забанено: {sum(1 for u in db['users'] if u.get('banned', False))}"
     )
+
+# ---------------- OP ----------------
+@bot.message_handler(commands=["op"])
+def cmd_op(message):
+    if message.from_user.id not in ADMINS:
+        bot.reply_to(message, "❌ У вас нет прав для этой команды.")
+        return
+
+    args = message.text.split(maxsplit=1)
+    if len(args) < 2:
+        bot.reply_to(message, "⚠ Использование: /op <id|username|minecraft>")
+        return
+
+    target = args[1].strip()
+    user = find_user(target)
+    
+    if not user:
+        bot.reply_to(message, f"⚠ Пользователь '{target}' не найден.")
+        return
+
+    if not user.get("minecraft"):
+        bot.reply_to(message, "❌ У пользователя нет Minecraft ника.")
+        return
+
+    uid = user["telegram_id"]
+    minecraft_nick = user["minecraft"]
+    name = user.get("username") or str(uid)
+
+    rcon_op(minecraft_nick)
+
+    bot.send_message(
+        message.chat.id,
+        f'👑 Пользователю <a href="tg://user?id={uid}">{name}</a> ({minecraft_nick}) выданы OP-права.',
+        parse_mode="HTML"
+    )
+    log(f"OP granted to {uid} ({minecraft_nick})")
+
+# ---------------- DEOP ----------------
+@bot.message_handler(commands=["deop"])
+def cmd_deop(message):
+    if message.from_user.id not in ADMINS:
+        bot.reply_to(message, "❌ У вас нет прав для этой команды.")
+        return
+
+    args = message.text.split(maxsplit=1)
+    if len(args) < 2:
+        bot.reply_to(message, "⚠ Использование: /deop <id|username|minecraft>")
+        return
+
+    target = args[1].strip()
+    user = find_user(target)
+    
+    if not user:
+        bot.reply_to(message, f"⚠ Пользователь '{target}' не найден.")
+        return
+
+    if not user.get("minecraft"):
+        bot.reply_to(message, "❌ У пользователя нет Minecraft ника.")
+        return
+
+    uid = user["telegram_id"]
+    minecraft_nick = user["minecraft"]
+    name = user.get("username") or str(uid)
+
+    rcon_deop(minecraft_nick)
+
+    bot.send_message(
+        message.chat.id,
+        f'🚫 У пользователя <a href="tg://user?id={uid}">{name}</a> ({minecraft_nick}) забраны OP-права.',
+        parse_mode="HTML"
+    )
+    log(f"OP removed from {uid} ({minecraft_nick})")
 
 @bot.message_handler(func=lambda m: True)
 def flow(message):
