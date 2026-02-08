@@ -283,6 +283,47 @@ def cmd_deluser(message):
         parse_mode="HTML"
     )
 
+# ---------------- SYNC WHITELIST ----------------
+@bot.message_handler(commands=["syncwhitelist"])
+def cmd_sync_whitelist(message):
+    if message.from_user.id not in ADMINS:
+        bot.reply_to(message, "❌ У вас нет прав для этой команды.")
+        return
+
+    bot.send_message(message.chat.id, "⏳ Синхронизация whitelist...")
+
+    db = parser.load_db()
+    
+    added_count = 0
+    error_count = 0
+    
+    for user in db["users"]:
+        # Пропускаем забаненных
+        if user.get("banned", False):
+            continue
+        
+        # Пропускаем пользователей без Minecraft ника
+        if not user.get("minecraft"):
+            continue
+        
+        try:
+            rcon_whitelist_add(user["minecraft"])
+            added_count += 1
+            time.sleep(0.1)  # небольшая задержка между командами
+        except Exception as e:
+            print(f"Error adding {user['minecraft']} to whitelist: {e}")
+            error_count += 1
+    
+    bot.send_message(
+        message.chat.id,
+        f"✅ Синхронизация завершена!\n\n"
+        f"📊 Статистика:\n"
+        f"• Добавлено в whitelist: {added_count}\n"
+        f"• Ошибок: {error_count}\n"
+        f"• Всего в базе: {len(db['users'])}\n"
+        f"• Забанено: {sum(1 for u in db['users'] if u.get('banned', False))}"
+    )
+
 @bot.message_handler(func=lambda m: True)
 def flow(message):
     chat_id = message.chat.id 
