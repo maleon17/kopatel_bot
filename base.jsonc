@@ -107,6 +107,15 @@
             "kit": "🪖 Воин",
             "banned": false,
             "mirror_msg": 40
+        },
+        {
+            "telegram_id": 1931868273,
+            "username": "@Ne_Varenik02",
+            "minecraft": "Dragon_Neba",
+            "faction": "🔵 Синие",
+            "kit": "🎯 Снайпер",
+            "banned": false,
+            "mirror_msg": 43
         }
     ]
 }
