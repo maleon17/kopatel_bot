@@ -60,7 +60,7 @@
             "minecraft": "TamerlanKumys",
             "faction": "🔵 Синие",
             "kit": "🛠 Инженер",
-            "banned": false,
+            "banned": true,
             "mirror_msg": 21
         }
     ]
