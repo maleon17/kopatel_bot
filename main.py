@@ -378,39 +378,65 @@ def cmd_sync_whitelist(message):
         bot.reply_to(message, "❌ У вас нет прав для этой команды.")
         return
 
-    bot.send_message(message.chat.id, "⏳ Синхронизация whitelist...")
+    bot.send_message(message.chat.id, "⏳ Синхронизация whitelist и китов...")
 
     db = parser.load_db()
     
-    added_count = 0
+    whitelist_count = 0
+    kit_count = 0
+    skipped_count = 0
     error_count = 0
     
     for user in db["users"]:
         # Пропускаем забаненных
         if user.get("banned", False):
+            skipped_count += 1
             continue
         
         # Пропускаем пользователей без Minecraft ника
         if not user.get("minecraft"):
+            skipped_count += 1
             continue
         
+        nick = user["minecraft"]
+        
+        # Whitelist
         try:
-            rcon_whitelist_add(user["minecraft"])
-            added_count += 1
-            time.sleep(0.1)  # небольшая задержка между командами
+            rcon_whitelist_add(nick)
+            whitelist_count += 1
+            time.sleep(0.1)
         except Exception as e:
-            print(f"Error adding {user['minecraft']} to whitelist: {e}")
+            print(f"Error adding {nick} to whitelist: {e}")
             error_count += 1
+        
+        # Кит
+        faction = convert_faction(user.get("faction", ""))
+        kit = convert_kit(user.get("kit", ""))
+        
+        if faction and kit:
+            try:
+                rcon_custom_command(f"addkit {nick} {faction} {kit}")
+                kit_count += 1
+                time.sleep(0.1)
+            except Exception as e:
+                print(f"Error adding kit for {nick}: {e}")
+                error_count += 1
+        else:
+            print(f"Skipping kit for {nick}: faction={user.get('faction')} kit={user.get('kit')}")
     
     bot.send_message(
         message.chat.id,
         f"✅ Синхронизация завершена!\n\n"
         f"📊 Статистика:\n"
-        f"• Добавлено в whitelist: {added_count}\n"
+        f"• Добавлено в whitelist: {whitelist_count}\n"
+        f"• Выдано китов: {kit_count}\n"
+        f"• Пропущено: {skipped_count}\n"
         f"• Ошибок: {error_count}\n"
         f"• Всего в базе: {len(db['users'])}\n"
         f"• Забанено: {sum(1 for u in db['users'] if u.get('banned', False))}"
     )
+    
+    log(f"Sync whitelist+kits: {whitelist_count} whitelisted, {kit_count} kits assigned (by {message.from_user.id})")
  
 # ---------------- OP ----------------
 @bot.message_handler(commands=["op"])
