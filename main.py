@@ -485,7 +485,6 @@ def cmd_deop(message):
     log(f"OP removed from {uid} ({minecraft_nick})")
 
 #----------------- SERVER RESTART-----------------
-
 @bot.message_handler(commands=["srvrestart"])
 def cmd_srvrestart(message):
     if message.from_user.id not in ADMINS:
@@ -495,19 +494,26 @@ def cmd_srvrestart(message):
     bot.reply_to(message, "⚠️ Отправляю оповещение о перезагрузке...")
     
     def restart_countdown():
-        rcon_custom_command('say §c§l⚠ ВНИМАНИЕ! ПЕРЕЗАГРУЗКА СЕРВЕРА ЧЕРЕЗ 5 СЕКУНД!')
+        # Главное предупреждение
+        rcon_custom_command('title @a title {"text":"ВНИМАНИЕ!","color":"red","bold":true}')
+        rcon_custom_command('title @a subtitle {"text":"Перезагрузка через 5 секунд","color":"yellow"}')
+        time.sleep(2)
+        
+        # Отсчёт
+        rcon_custom_command('title @a title {"text":"5","color":"yellow","bold":true}')
         time.sleep(1)
-        rcon_custom_command('say §e§l5...')
+        rcon_custom_command('title @a title {"text":"4","color":"yellow","bold":true}')
         time.sleep(1)
-        rcon_custom_command('say §e§l4...')
+        rcon_custom_command('title @a title {"text":"3","color":"gold","bold":true}')
         time.sleep(1)
-        rcon_custom_command('say §6§l3...')
+        rcon_custom_command('title @a title {"text":"2","color":"red","bold":true}')
         time.sleep(1)
-        rcon_custom_command('say §c§l2...')
+        rcon_custom_command('title @a title {"text":"1","color":"dark_red","bold":true}')
         time.sleep(1)
-        rcon_custom_command('say §4§l1...')
-        time.sleep(1)
-        rcon_custom_command('say §4§l🔄 СЕРВЕР ПЕРЕЗАГРУЖАЕТСЯ...')
+        
+        # Финальное сообщение
+        rcon_custom_command('title @a title {"text":"ПЕРЕЗАГРУЗКА","color":"dark_red","bold":true}')
+        rcon_custom_command('title @a subtitle {"text":"Сервер скоро вернётся","color":"gray"}')
     
     thread = threading.Thread(target=restart_countdown)
     thread.start()
