@@ -109,6 +109,13 @@ def rcon_process_worker(queue, host, port, password):
                 elif action == "deop":
                     resp = mcr.command(f"deop {nick}")
                     print(f"RCON: deop {nick} -> {resp}")
+                elif action == "kick":
+                    reason = cmd[2] if len(cmd) > 2 else "Kicked"
+                    resp = mcr.command(f"kick {nick} {reason}")
+                    print(f"RCON: kick {nick} -> {resp}")
+                elif action == "clearsession":
+                    resp = mcr.command(f"authmod clearsession {nick}")
+                    print(f"RCON: authmod clearsession {nick} -> {resp}")
         except Exception as e:
             print("RCON ERROR:", e)
 
@@ -145,6 +152,12 @@ def rcon_deop(nick):
 def rcon_custom_command(command):
     """Отправка произвольной команды через RCON"""
     rcon_queue.put(("custom", command))
+
+def rcon_kick(nick, reason="Kicked"):
+    rcon_queue.put(("kick", nick, reason))
+
+def rcon_clearsession(nick):
+    rcon_queue.put(("clearsession", nick))
 
 
 @bot.message_handler(commands=["start"])
@@ -743,41 +756,26 @@ def sync_github_to_local():
 
 # ============== AUTH SYSTEM ==============
 
+
 def signal_mod_reload():
-    """Сигнал моду перечитать базу данных через RCON"""
-    try:
-        with MCRcon(RCON_HOST, RCON_PASSWORD, port=RCON_PORT) as mcr:
-            resp = mcr.command("authmod reload")
-            print(f"RCON: authmod reload -> {resp}")
-            return True
-    except Exception as e:
-        print(f"RCON ERROR: authmod reload -> {e}")
-        return False
+   # """Сигнал моду перечитать базу данных через RCON"""
+    rcon_custom_command("authmod reload")
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith("kick_"))
 def handle_not_me_kick(call):
-    """Обработка кнопки 'Это не я ⚠️'"""
+   # """Обработка кнопки 'Это не я ⚠️'"""
     try:
         nick = call.data.replace("kick_", "")
         
-        # Находим игрока в базе
         user = find_user(nick)
         if not user:
             bot.answer_callback_query(call.id, "❌ Пользователь не найден")
             return
         
-        # Кикаем игрока через RCON
-        try:
-            with MCRcon(RCON_HOST, RCON_PASSWORD, port=RCON_PORT) as mcr:
-                mcr.command(f"kick {nick} Сессия отклонена владельцем аккаунта")
-                mcr.command(f"authmod clearsession {nick}")
-                print(f"RCON: kicked {nick} and cleared session")
-        except Exception as e:
-            print(f"RCON error kicking {nick}: {e}")
-            bot.answer_callback_query(call.id, "❌ Ошибка RCON")
-            return
+        # Через очередь — никаких проблем с потоками
+        rcon_kick(nick, "Сессия отклонена владельцем аккаунта")
+        rcon_clearsession(nick)
         
-        # Редактируем сообщение (убираем кнопку)
         bot.edit_message_text(
             chat_id=call.message.chat.id,
             message_id=call.message.message_id,
