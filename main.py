@@ -484,6 +484,36 @@ def cmd_deop(message):
     )
     log(f"OP removed from {uid} ({minecraft_nick})")
 
+#----------------- SERVER RESTART-----------------
+
+@bot.message_handler(commands=["srvrestart"])
+def cmd_srvrestart(message):
+    if message.from_user.id not in ADMINS:
+        bot.reply_to(message, "❌ У вас нет прав для этой команды.")
+        return
+    
+    bot.reply_to(message, "⚠️ Отправляю оповещение о перезагрузке...")
+    
+    def restart_countdown():
+        rcon_custom_command('say §c§l⚠ ВНИМАНИЕ! ПЕРЕЗАГРУЗКА СЕРВЕРА ЧЕРЕЗ 5 СЕКУНД!')
+        time.sleep(1)
+        rcon_custom_command('say §e§l5...')
+        time.sleep(1)
+        rcon_custom_command('say §e§l4...')
+        time.sleep(1)
+        rcon_custom_command('say §6§l3...')
+        time.sleep(1)
+        rcon_custom_command('say §c§l2...')
+        time.sleep(1)
+        rcon_custom_command('say §4§l1...')
+        time.sleep(1)
+        rcon_custom_command('say §4§l🔄 СЕРВЕР ПЕРЕЗАГРУЖАЕТСЯ...')
+    
+    thread = threading.Thread(target=restart_countdown)
+    thread.start()
+    
+    log(f"Server restart countdown by {message.from_user.id}")
+
 # ---------------- CUSTOM COMMAND ----------------
 @bot.message_handler(commands=["command", "cmd"])
 def cmd_custom_command(message):
