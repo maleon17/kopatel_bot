@@ -496,19 +496,18 @@ def cmd_srvrestart(message):
     def restart_countdown():
         # Главное предупреждение
         rcon_custom_command('title @a title {"text":"ВНИМАНИЕ!","color":"red","bold":true}')
-        rcon_custom_command('title @a subtitle {"text":"Перезагрузка через 5 секунд","color":"yellow"}')
         time.sleep(2)
         
         # Отсчёт
-        rcon_custom_command('title @a title {"text":"5","color":"yellow","bold":true}')
+        rcon_custom_command('title @a title {"text":"Перезагрузка через 5 секунд","color":"yellow","bold":true}')
         time.sleep(1)
-        rcon_custom_command('title @a title {"text":"4","color":"yellow","bold":true}')
+        rcon_custom_command('title @a title {"text":"Перезагрузка через 4 секунд","color":"yellow","bold":true}')
         time.sleep(1)
-        rcon_custom_command('title @a title {"text":"3","color":"gold","bold":true}')
+        rcon_custom_command('title @a title {"text":"Перезагрузка через 3 секунд","color":"gold","bold":true}')
         time.sleep(1)
-        rcon_custom_command('title @a title {"text":"2","color":"red","bold":true}')
+        rcon_custom_command('title @a title {"text":"Перезагрузка через 2 секунд","color":"red","bold":true}')
         time.sleep(1)
-        rcon_custom_command('title @a title {"text":"1","color":"dark_red","bold":true}')
+        rcon_custom_command('title @a title {"text":"Перезагрузка через 1 секунд","color":"dark_red","bold":true}')
         time.sleep(1)
         
         # Финальное сообщение
