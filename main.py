@@ -411,7 +411,7 @@ def cmd_sync_whitelist(message):
         f"• Всего в базе: {len(db['users'])}\n"
         f"• Забанено: {sum(1 for u in db['users'] if u.get('banned', False))}"
     )
-
+ 
 # ---------------- OP ----------------
 @bot.message_handler(commands=["op"])
 def cmd_op(message):
@@ -587,19 +587,19 @@ def cmd_custom_command(message):
 def convert_faction(faction_name):
     """Конвертирует название фракции в значение для команды"""
     faction_map = {
-        FACTIONS[0]: "blue",
-        FACTIONS[1]: "red",
+        "🔴 Красные": "red",
+        "🔵 Синие": "blue",
     }
     return faction_map.get(faction_name)
 
 def convert_kit(kit_name):
     """Конвертирует название кита в значение для команды"""
     kit_map = {
-        KITS[0]: "medik",
-        KITS[1]: "sniper",
-        KITS[2]: "boec",
-        KITS[3]: "ingener",
-        KITS[4]: "operator_bpla",
+        "🪖 Воин": "boec",
+        "🎯 Снайпер": "sniper",
+        "🛠 Инженер": "ingener",
+        "🚁 Оператор БПЛА": "operator_bpla",
+        "👨‍⚕️ Медик": "medik",
     }
     return kit_map.get(kit_name)
 
@@ -700,14 +700,13 @@ def flow(message):
                 exists = True
                 break
 
-        # Если нового пользователя — добавляем
         if not exists:
             db["users"].append(user)
 
         if user.get("minecraft"):
             rcon_whitelist_add(user["minecraft"])
             
-                        # === АВТОВЫДАЧА КИТА ===
+            # === АВТОВЫДАЧА КИТА ===
             nick = s["nick"]
             faction = convert_faction(s["faction"])
             kit = convert_kit(s["kit"])
