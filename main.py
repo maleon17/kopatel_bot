@@ -584,6 +584,25 @@ def cmd_custom_command(message):
     
     log(f"Custom command: {final_command} (by {message.from_user.id})")
 
+def convert_faction(faction_name):
+    """Конвертирует название фракции в значение для команды"""
+    faction_map = {
+        FACTIONS[0]: "blue",
+        FACTIONS[1]: "red",
+    }
+    return faction_map.get(faction_name)
+
+def convert_kit(kit_name):
+    """Конвертирует название кита в значение для команды"""
+    kit_map = {
+        KITS[0]: "medik",
+        KITS[1]: "sniper",
+        KITS[2]: "boec",
+        KITS[3]: "ingener",
+        KITS[4]: "operator_bpla",
+    }
+    return kit_map.get(kit_name)
+
 @bot.message_handler(func=lambda m: True)
 def flow(message):
     chat_id = message.chat.id 
@@ -687,6 +706,16 @@ def flow(message):
 
         if user.get("minecraft"):
             rcon_whitelist_add(user["minecraft"])
+            
+                        # === АВТОВЫДАЧА КИТА ===
+            nick = s["nick"]
+            faction = convert_faction(s["faction"])
+            kit = convert_kit(s["kit"])
+            
+            if faction and kit:
+                rcon_custom_command(f"addkit {nick} {faction} {kit}")
+                print(f"Kit assigned: {nick} {faction} {kit}")
+
 
         # Сохраняем базу
         parser.save_db(db)
