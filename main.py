@@ -129,7 +129,7 @@ rcon_process = multiprocessing.Process(
 rcon_process.start()
 print("✓ RCON process started")
 
-# --------- Функции для добавления команд в очередь ---------
+# -------- добавление команд в очередь ---------
 
 def rcon_ban(nick):
     rcon_queue.put(("ban", nick))
@@ -260,6 +260,7 @@ def cmd_ban(message):
         bot.reply_to(message, "❌ Не удалось забанить пользователя.")
 
 # ---------------- UNBAN ----------------
+
 @bot.message_handler(commands=["unban"])
 def cmd_unban(message):
     if message.from_user.id not in ADMINS:
@@ -324,6 +325,7 @@ def cmd_unban(message):
         bot.reply_to(message, "❌ Не удалось разбанить пользователя.")
 
 # ---------------- DEL USER ----------------
+
 @bot.message_handler(commands=["deluser"])
 def cmd_deluser(message):
     if message.from_user.id not in ADMINS:
@@ -372,7 +374,8 @@ def cmd_deluser(message):
     )
 
 # ---------------- SYNC WHITELIST ----------------
-@bot.message_handler(commands=["syncwhitelist"])
+
+@bot.message_handler(commands=["sync"])
 def cmd_sync_whitelist(message):
     if message.from_user.id not in ADMINS:
         bot.reply_to(message, "❌ У вас нет прав для этой команды.")
@@ -439,6 +442,7 @@ def cmd_sync_whitelist(message):
     log(f"Sync whitelist+kits: {whitelist_count} whitelisted, {kit_count} kits assigned (by {message.from_user.id})")
  
 # ---------------- OP ----------------
+
 @bot.message_handler(commands=["op"])
 def cmd_op(message):
     if message.from_user.id not in ADMINS:
@@ -475,6 +479,7 @@ def cmd_op(message):
     log(f"OP granted to {uid} ({minecraft_nick})")
 
 # ---------------- DEOP ----------------
+
 @bot.message_handler(commands=["deop"])
 def cmd_deop(message):
     if message.from_user.id not in ADMINS:
@@ -511,6 +516,7 @@ def cmd_deop(message):
     log(f"OP removed from {uid} ({minecraft_nick})")
 
 #----------------- SERVER RESTART-----------------
+
 @bot.message_handler(commands=["srvrestart"])
 def cmd_srvrestart(message):
     if message.from_user.id not in ADMINS:
@@ -546,6 +552,7 @@ def cmd_srvrestart(message):
     log(f"Server restart countdown by {message.from_user.id}")
 
 # ---------------- CUSTOM COMMAND ----------------
+
 @bot.message_handler(commands=["command", "cmd"])
 def cmd_custom_command(message):
     if message.from_user.id not in ADMINS:
@@ -610,6 +617,8 @@ def cmd_custom_command(message):
     
     log(f"Custom command: {final_command} (by {message.from_user.id})")
 
+# ------------ convert fraction name -----------
+
 def convert_faction(faction_name):
     """Конвертирует название фракции в значение для команды"""
     faction_map = {
@@ -628,6 +637,8 @@ def convert_kit(kit_name):
         "👨‍⚕️ Медик": "medik",
     }
     return kit_map.get(kit_name)
+
+# ---------------- flow ----------------
 
 @bot.message_handler(func=lambda m: True)
 def flow(message):
@@ -783,6 +794,7 @@ def flow(message):
         sessions.pop(uid)
         return
 
+# -------------- github load ------------------
 
 def github_load_db():
     """Загрузка базы данных из GitHub"""
@@ -843,7 +855,7 @@ def sync_github_to_local():
         print(f"❌ GitHub sync failed: {e}")
 
 
-# ============== AUTH SYSTEM ==============
+# --------------- AUTH SYSTEM -----------------
 
 
 def signal_mod_reload():
