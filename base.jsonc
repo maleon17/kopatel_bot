@@ -134,6 +134,15 @@
             "kit": "🪖 Воин",
             "banned": false,
             "mirror_msg": 75
+        },
+        {
+            "telegram_id": 1945046773,
+            "username": "@Nexlorin",
+            "minecraft": "Nexlorin",
+            "faction": "🔵 Синие",
+            "kit": "🪖 Воин",
+            "banned": false,
+            "mirror_msg": 76
         }
     ]
 }
