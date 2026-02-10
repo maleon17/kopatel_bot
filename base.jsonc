@@ -134,6 +134,15 @@
             "kit": "🪖 Воин",
             "banned": false,
             "mirror_msg": 74
+        },
+        {
+            "telegram_id": 1813392185,
+            "username": "@Sergei_Kantos",
+            "minecraft": "coolcant",
+            "faction": "🔵 Синие",
+            "kit": "🪖 Воин",
+            "banned": false,
+            "mirror_msg": 75
         }
     ]
 }
