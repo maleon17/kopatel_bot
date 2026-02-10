@@ -91,6 +91,15 @@
             "mirror_msg": 64
         },
         {
+            "telegram_id": 1813392185,
+            "username": "@Sergei_Kantos",
+            "minecraft": "coolcant",
+            "faction": "🔵 Синие",
+            "kit": "🪖 Воин",
+            "banned": false,
+            "mirror_msg": 65
+        },
+        {
             "telegram_id": 6441820355,
             "username": "@Kaktus_HJG21",
             "minecraft": "HJG21",
@@ -125,6 +134,15 @@
             "kit": "🚁 Оператор БПЛА",
             "banned": false,
             "mirror_msg": 73
+        },
+        {
+            "telegram_id": 1945046773,
+            "username": "@Nexlorin",
+            "minecraft": "Nexlorin",
+            "faction": "🔵 Синие",
+            "kit": "🪖 Воин",
+            "banned": false,
+            "mirror_msg": 74
         }
     ]
 }
