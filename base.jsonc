@@ -143,6 +143,15 @@
             "kit": "🪖 Воин",
             "banned": false,
             "mirror_msg": 76
+        },
+        {
+            "telegram_id": 6843014383,
+            "username": "@Alasshhik",
+            "minecraft": "Alasshh",
+            "faction": "🔵 Синие",
+            "kit": "🪖 Воин",
+            "banned": false,
+            "mirror_msg": 77
         }
     ]
 }
