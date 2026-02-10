@@ -373,6 +373,82 @@ def cmd_deluser(message):
         parse_mode="HTML"
     )
 
+# ---------------- MIRROR RESTART ----------------
+
+@bot.message_handler(commands=["restartmirror"])
+def cmd_restart_mirror(message):
+    if message.from_user.id not in ADMINS:
+        bot.reply_to(message, "❌ У вас нет прав для этой команды.")
+        return
+
+    bot.send_message(message.chat.id, "⏳ Перезапуск зеркальной группы...")
+
+    db = parser.load_db()
+
+    # Шаг 1: Удаляем все старые сообщения
+    deleted_count = 0
+    for user in db["users"]:
+        msg_id = user.get("mirror_msg")
+        if msg_id:
+            try:
+                bot.delete_message(MIRROR_GROUP, msg_id)
+                deleted_count += 1
+            except Exception as e:
+                print(f"Error deleting msg {msg_id}: {e}")
+            time.sleep(0.1)
+
+    bot.send_message(message.chat.id, f"🗑 Удалено сообщений: {deleted_count}\n⏳ Создаю новые...")
+
+    # Шаг 2: Отправляем новые сообщения для каждого пользователя
+    created_count = 0
+    error_count = 0
+
+    for user in db["users"]:
+        try:
+            username = user.get("username", "unknown")
+            nick = user.get("minecraft", "—")
+            faction = user.get("faction", "—")
+            kit = user.get("kit", "—")
+            banned = user.get("banned", False)
+            uid = user.get("telegram_id", "—")
+
+            text = (
+                f"🆔 {uid}\n"
+                f"🎮 {nick}\n"
+                f"👤 {username}\n"
+                f"🏳 {faction}\n"
+                f"🧰 {kit}\n"
+                f"🚫 banned: {str(banned).lower()}"
+            )
+
+            msg = bot.send_message(MIRROR_GROUP, text)
+            user["mirror_msg"] = msg.message_id
+            created_count += 1
+            time.sleep(0.3)  # задержка чтобы не словить flood limit
+
+        except Exception as e:
+            print(f"Error creating mirror for {user.get('minecraft', '?')}: {e}")
+            error_count += 1
+
+    # Шаг 3: Сохраняем обновлённую базу
+    parser.save_db(db)
+
+    # Синхронизируем с GitHub
+    if GITHUB_ENABLED:
+        github_save_db(db, message="Restart mirror group")
+
+    bot.send_message(
+        message.chat.id,
+        f"✅ Зеркальная группа перезапущена!\n\n"
+        f"📊 Статистика:\n"
+        f"• Удалено старых: {deleted_count}\n"
+        f"• Создано новых: {created_count}\n"
+        f"• Ошибок: {error_count}\n"
+        f"• Всего в базе: {len(db['users'])}"
+    )
+
+    log(f"Mirror restart: {deleted_count} deleted, {created_count} created (by {message.from_user.id})")
+    
 # ---------------- SYNC WHITELIST ----------------
 
 @bot.message_handler(commands=["sync"])
