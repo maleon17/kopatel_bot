@@ -714,6 +714,134 @@ def convert_kit(kit_name):
     }
     return kit_map.get(kit_name)
 
+# ============== ГЛАВНОЕ МЕНЮ ==============
+
+def send_main_menu(chat_id):
+    """Отправляет главное меню"""
+    kb = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    kb.row("🔧 Инструменты")
+    kb.row("🆘 Поддержка")
+    bot.send_message(chat_id, "📋 Главное меню:", reply_markup=kb)
+
+# ============== ИНСТРУМЕНТЫ ==============
+
+@bot.message_handler(func=lambda m: m.text == "🔧 Инструменты")
+def menu_tools(message):
+    if message.chat.type != "private":
+        return
+    
+    kb = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    kb.row("🎤 Микрофон", "🔐 VPN")
+    kb.row("📦 Сборка")
+    kb.row("◀️ Назад")
+    bot.send_message(message.chat.id, "🔧 Инструменты:", reply_markup=kb)
+
+# ============== МИКРОФОН ==============
+
+@bot.message_handler(func=lambda m: m.text == "🎤 Микрофон")
+def menu_microphone(message):
+    if message.chat.type != "private":
+        return
+    
+    kb = types.InlineKeyboardMarkup()
+    kb.add(types.InlineKeyboardButton("📖 Инструкция по микрофону", url="https://example.com"))
+    bot.send_message(
+        message.chat.id,
+        "🎤 *Настройка микрофона*\n\n"
+        "Нажмите кнопку ниже для просмотра инструкции:",
+        parse_mode="Markdown",
+        reply_markup=kb
+    )
+
+# ============== VPN ==============
+
+@bot.message_handler(func=lambda m: m.text == "🔐 VPN")
+def menu_vpn(message):
+    if message.chat.type != "private":
+        return
+    
+    kb = types.InlineKeyboardMarkup()
+    kb.add(types.InlineKeyboardButton("📖 Инструкция по VPN", url="https://example.com"))
+    bot.send_message(
+        message.chat.id,
+        "🔐 *Настройка VPN*\n\n"
+        "Нажмите кнопку ниже для просмотра инструкции:",
+        parse_mode="Markdown",
+        reply_markup=kb
+    )
+
+# ============== СБОРКА ==============
+
+@bot.message_handler(func=lambda m: m.text == "📦 Сборка")
+def menu_build(message):
+    if message.chat.type != "private":
+        return
+    
+    kb = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    kb.row("⚙️ Настройка", "📥 Скачать")
+    kb.row("◀️ Назад в инструменты")
+    bot.send_message(message.chat.id, "📦 Сборка:", reply_markup=kb)
+
+# ============== НАСТРОЙКА СБОРКИ ==============
+
+@bot.message_handler(func=lambda m: m.text == "⚙️ Настройка")
+def menu_build_setup(message):
+    if message.chat.type != "private":
+        return
+    
+    kb = types.InlineKeyboardMarkup()
+    kb.add(types.InlineKeyboardButton("📖 Инструкция по настройке", url="https://example.com"))
+    bot.send_message(
+        message.chat.id,
+        "⚙️ *Настройка сборки*\n\n"
+        "Нажмите кнопку ниже для просмотра инструкции:",
+        parse_mode="Markdown",
+        reply_markup=kb
+    )
+
+# ============== СКАЧАТЬ СБОРКУ ==============
+
+@bot.message_handler(func=lambda m: m.text == "📥 Скачать")
+def menu_build_download(message):
+    if message.chat.type != "private":
+        return
+    
+    kb = types.InlineKeyboardMarkup()
+    kb.row(
+        types.InlineKeyboardButton("Google Диск", url="https://example.com"),
+        types.InlineKeyboardButton("Yandex Диск", url="https://example.com")
+    )
+    bot.send_message(
+        message.chat.id,
+        "📥 *Скачать сборку*\n\n"
+        "Выберите откуда скачать:",
+        parse_mode="Markdown",
+        reply_markup=kb
+    )
+
+# ============== НАЗАД ==============
+
+@bot.message_handler(func=lambda m: m.text == "◀️ Назад")
+def menu_back_main(message):
+    if message.chat.type != "private":
+        return
+    send_main_menu(message.chat.id)
+
+@bot.message_handler(func=lambda m: m.text == "◀️ Назад в инструменты")
+def menu_back_tools(message):
+    if message.chat.type != "private":
+        return
+    menu_tools(message)
+
+# ============== ПОДДЕРЖКА ==============
+
+@bot.message_handler(func=lambda m: m.text == "🆘 Поддержка")
+def menu_support(message):
+    if message.chat.type != "private":
+        return
+    bot.send_message(message.chat.id, "🆘 Раздел поддержки в разработке...")
+
+
 # ---------------- flow ----------------
 
 @bot.message_handler(func=lambda m: True)
@@ -861,11 +989,9 @@ def flow(message):
             github_save_db(db, message=f"Register user {uid} ({username})")
             signal_mod_reload()  # Сигнал моду обновить базу
 
-        bot.send_message(
-            chat_id,
-            "✅ Регистрация завершена",
-            reply_markup=ReplyKeyboardRemove()
-        )
+        bot.send_message(chat_id, "✅ Регистрация завершена")
+            send_main_menu(chat_id)
+            
         log(f"NEW USER {uid} ({s['nick']})")
         sessions.pop(uid)
         return
