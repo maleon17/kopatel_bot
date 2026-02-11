@@ -184,7 +184,7 @@ def start(message):
             message.chat.id,
             f"Пользователь уже зарегистрирован ❌\n"
             f"{existing['minecraft']}, вы выбрали:\nФракция: {existing['faction']}\nKit: {existing['kit']}",
-            reply_markup=ReplyKeyboardRemove()
+            send_main_menu(chat_id)
         )
         return
 
