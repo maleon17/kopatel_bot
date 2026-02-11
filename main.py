@@ -990,7 +990,7 @@ def flow(message):
             signal_mod_reload()  # Сигнал моду обновить базу
 
         bot.send_message(chat_id, "✅ Регистрация завершена")
-            send_main_menu(chat_id)
+        send_main_menu(chat_id)
             
         log(f"NEW USER {uid} ({s['nick']})")
         sessions.pop(uid)
