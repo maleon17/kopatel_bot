@@ -159,6 +159,7 @@ def rcon_kick(nick, reason="Kicked"):
 def rcon_clearsession(nick):
     rcon_queue.put(("clearsession", nick))
 
+# --------------- START --------------------
 
 @bot.message_handler(commands=["start"])
 def start(message):
@@ -172,7 +173,6 @@ def start(message):
     else:
         db = parser.load_db()
 
-    # игнорируем группы
     if message.chat.type != "private":
         return
 
@@ -183,15 +183,18 @@ def start(message):
         bot.send_message(
             message.chat.id,
             f"Пользователь уже зарегистрирован ❌\n"
-            f"{existing['minecraft']}, вы выбрали:\nФракция: {existing['faction']}\nKit: {existing['kit']}",
-            send_main_menu(chat_id)
+            f"{existing['minecraft']}, вы выбрали:\n"
+            f"Фракция: {existing['faction']}\n"
+            f"Kit: {existing['kit']}"
         )
+        send_main_menu(message.chat.id)  # отдельной строкой, после send_message
         return
 
     sessions[uid] = {}
     bot.send_message(
         message.chat.id,
-        "🛰 Первичный допуск\n======================\nВведите Minecraft ник (3–16 символов, без пробелов)",
+        "🛰 Первичный допуск\n======================\n"
+        "Введите Minecraft ник (3–16 символов, без пробелов)",
         reply_markup=ReplyKeyboardRemove()
     )
 
