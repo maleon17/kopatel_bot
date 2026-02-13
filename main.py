@@ -98,11 +98,11 @@ def rcon_process_worker(queue, host, port, password):
                     resp = mcr.command(f"pardon {nick}")
                     print(f"RCON: unban {nick} -> {resp}")
                 elif action == "del":
-                    resp = mcr.command(f"whitelist remove {nick}")
-                    print(f"RCON: del {nick} -> {resp}")
+                    resp# = mcr.command(f"whitelist remove {nick}")
+                    #print(f"RCON: del {nick} -> {resp}")
                 elif action == "whitelist":
-                    resp = mcr.command(f"whitelist add {nick}")
-                    print(f"RCON: whitelist add {nick} -> {resp}")
+                    resp# = mcr.command(f"whitelist add {nick}")
+                    #print(f"RCON: whitelist add {nick} -> {resp}")
                 elif action == "op":
                     resp = mcr.command(f"op {nick}")
                     print(f"RCON: op {nick} -> {resp}")
@@ -452,7 +452,7 @@ def cmd_restart_mirror(message):
 
     log(f"Mirror restart: {deleted_count} deleted, {created_count} created (by {message.from_user.id})")
     
-# ---------------- SYNC WHITELIST ----------------
+# ---------------- SYNC ----------------
 
 @bot.message_handler(commands=["sync"])
 def cmd_sync_whitelist(message):
@@ -464,7 +464,7 @@ def cmd_sync_whitelist(message):
 
     db = parser.load_db()
     
-    whitelist_count = 0
+    #whitelist_count = 0
     kit_count = 0
     skipped_count = 0
     error_count = 0
@@ -483,13 +483,13 @@ def cmd_sync_whitelist(message):
         nick = user["minecraft"]
         
         # Whitelist
-        try:
-            rcon_whitelist_add(nick)
-            whitelist_count += 1
-            time.sleep(0.1)
-        except Exception as e:
-            print(f"Error adding {nick} to whitelist: {e}")
-            error_count += 1
+        #try:
+        #    rcon_whitelist_add(nick)
+        #    whitelist_count += 1
+        #    time.sleep(0.1)
+        #except Exception as e:
+        #    print(f"Error adding {nick} to whitelist: {e}")
+        #    error_count += 1
         
         # Кит
         faction = convert_faction(user.get("faction", ""))
@@ -510,7 +510,7 @@ def cmd_sync_whitelist(message):
         message.chat.id,
         f"✅ Синхронизация завершена!\n\n"
         f"📊 Статистика:\n"
-        f"• Добавлено в whitelist: {whitelist_count}\n"
+        #f"• Добавлено в whitelist: {whitelist_count}\n"
         f"• Выдано китов: {kit_count}\n"
         f"• Пропущено: {skipped_count}\n"
         f"• Ошибок: {error_count}\n"
