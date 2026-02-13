@@ -518,7 +518,7 @@ def cmd_sync_whitelist(message):
         f"• Забанено: {sum(1 for u in db['users'] if u.get('banned', False))}"
     )
     
-    log(f"Sync whitelist+kits: {whitelist_count} whitelisted, {kit_count} kits assigned (by {message.from_user.id})")
+    log(f"Sync kits: {kit_count} kits assigned (by {message.from_user.id})")
  
 # ---------------- OP ----------------
 
