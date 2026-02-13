@@ -498,6 +498,7 @@ def cmd_sync_whitelist(message):
         if faction and kit:
             try:
                 rcon_custom_command(f"addkit {nick} {faction} {kit}")
+                rcon_custom_command(f"team join {faction} {nick}")
                 kit_count += 1
                 time.sleep(0.1)
             except Exception as e:
@@ -958,6 +959,10 @@ def flow(message):
             if faction and kit:
                 rcon_custom_command(f"addkit {nick} {faction} {kit}")
                 print(f"Kit assigned: {nick} {faction} {kit}")
+                
+                # === ПРИВЯЗКА К КОМАНДЕ ===
+                rcon_custom_command(f"team join {faction} {nick}")
+                print(f"Team assigned: {nick} -> {faction}")
 
 
         # Сохраняем базу
