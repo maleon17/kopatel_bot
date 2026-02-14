@@ -143,6 +143,15 @@
             "kit": "🎯 Снайпер",
             "banned": false,
             "mirror_msg": 140
+        },
+        {
+            "telegram_id": 1796600774,
+            "username": "@Kortuf_5",
+            "minecraft": "Kortuf_",
+            "faction": "🔴 Красные",
+            "kit": "🛠 Инженер",
+            "banned": false,
+            "mirror_msg": 141
         }
     ]
 }
