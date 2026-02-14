@@ -793,11 +793,40 @@ def menu_build_setup(message):
     if message.chat.type != "private":
         return
     
+    kb = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    kb.row("TLauncher", "Prism/FreeSM")
+    kb.row("◀️ Назад в сборку")
+    bot.send_message(message.chat.id, "⚙️ Выберите ваш лаунчер:", reply_markup=kb)
+
+# ============== TLAUNCHER ==============
+
+@bot.message_handler(func=lambda m: m.text == "TLauncher")
+def menu_tlauncher(message):
+    if message.chat.type != "private":
+        return
+    
     kb = types.InlineKeyboardMarkup()
-    kb.add(types.InlineKeyboardButton("📖 Инструкция по настройке", url="https://example.com"))
+    kb.add(types.InlineKeyboardButton("📖 Настройка для TLauncher", url="https://example.com"))
     bot.send_message(
         message.chat.id,
-        "⚙️ *Настройка сборки*\n\n"
+        "⚙️ *Настройка сборки для TLauncher*\n\n"
+        "Нажмите кнопку ниже для просмотра инструкции:",
+        parse_mode="Markdown",
+        reply_markup=kb
+    )
+
+# ============== PRISM/FREESM ==============
+
+@bot.message_handler(func=lambda m: m.text == "Prism/FreeSM")
+def menu_prism(message):
+    if message.chat.type != "private":
+        return
+    
+    kb = types.InlineKeyboardMarkup()
+    kb.add(types.InlineKeyboardButton("📖 Настройка для Prism/FreeSM", url="https://example.com"))
+    bot.send_message(
+        message.chat.id,
+        "⚙️ *Настройка сборки для Prism/FreeSM*\n\n"
         "Нажмите кнопку ниже для просмотра инструкции:",
         parse_mode="Markdown",
         reply_markup=kb
