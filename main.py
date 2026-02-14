@@ -765,7 +765,7 @@ def menu_vpn(message):
         return
     
     kb = types.InlineKeyboardMarkup()
-    kb.add(types.InlineKeyboardButton("📖 Инструкция по VPN", url="https://example.com"))
+    kb.add(types.InlineKeyboardButton("📖 Инструкция по VPN", url="https://t.me/copalpal/59?single"))
     bot.send_message(
         message.chat.id,
         "🔐 *Настройка VPN*\n\n"
