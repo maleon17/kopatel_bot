@@ -817,7 +817,7 @@ def menu_tlauncher(message):
 
 # ============== PRISM/FREESM ==============
 
-@bot.message_handler(func=lambda m: m.text == "Prism/FreeSM")
+@bot.message_handler(func=lambda m: m.text == "Prism/Freesm")
 def menu_prism(message):
     if message.chat.type != "private":
         return
