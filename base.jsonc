@@ -1,3 +1,166 @@
 {
-    "users": []
+    "users": [
+        {
+            "telegram_id": 5456440531,
+            "username": "@nikd134",
+            "minecraft": "UlanaFo",
+            "faction": "🔵 Синие",
+            "kit": "🪖 Воин",
+            "banned": false,
+            "mirror_msg": 101
+        },
+        {
+            "telegram_id": 2091726116,
+            "username": "@b_b_e_e_a_a_u_u_t_t_y_y",
+            "minecraft": "slastika",
+            "faction": "🔴 Красные",
+            "kit": "🎯 Снайпер",
+            "banned": false,
+            "mirror_msg": 102
+        },
+        {
+            "telegram_id": 5339173346,
+            "username": "@Cruc1an_carpik",
+            "minecraft": "J0J0Bro",
+            "faction": "🔴 Красные",
+            "kit": "🎯 Снайпер",
+            "banned": false,
+            "mirror_msg": 103
+        },
+        {
+            "telegram_id": 8180611796,
+            "username": "@Cahipura",
+            "minecraft": "RoguePrime20",
+            "faction": "🔴 Красные",
+            "kit": "🎯 Снайпер",
+            "banned": false,
+            "mirror_msg": 104
+        },
+        {
+            "telegram_id": 948444991,
+            "username": "@Caxarocek",
+            "minecraft": "Caxarocek",
+            "faction": "🔴 Красные",
+            "kit": "👨‍⚕️ Медик",
+            "banned": false,
+            "mirror_msg": 105
+        },
+        {
+            "telegram_id": 8428312932,
+            "username": "@hisvas1",
+            "minecraft": "hisvas",
+            "faction": "🔵 Синие",
+            "kit": "🚁 Оператор БПЛА",
+            "banned": false,
+            "mirror_msg": 106
+        },
+        {
+            "telegram_id": 5261517335,
+            "username": "@ezrealai",
+            "minecraft": "ezrealai",
+            "faction": "🔴 Красные",
+            "kit": "🪖 Воин",
+            "banned": false,
+            "mirror_msg": 107
+        },
+        {
+            "telegram_id": 6437187512,
+            "username": "@za_garizontom_sobyti",
+            "minecraft": "BIBIDISTRA",
+            "faction": "🔴 Красные",
+            "kit": "🛠 Инженер",
+            "banned": false,
+            "mirror_msg": 108
+        },
+        {
+            "telegram_id": 1748715156,
+            "username": "@qqqSamurai_m6",
+            "minecraft": "danlk228567",
+            "faction": "🔵 Синие",
+            "kit": "🪖 Воин",
+            "banned": false,
+            "mirror_msg": 109
+        },
+        {
+            "telegram_id": 6441820355,
+            "username": "@Kaktus_HJG21",
+            "minecraft": "HJG21",
+            "faction": "🔵 Синие",
+            "kit": "🪖 Воин",
+            "banned": false,
+            "mirror_msg": 110
+        },
+        {
+            "telegram_id": 1931868273,
+            "username": "@Ne_Varenik02",
+            "minecraft": "Dragon_Neba",
+            "faction": "🔵 Синие",
+            "kit": "🎯 Снайпер",
+            "banned": false,
+            "mirror_msg": 111
+        },
+        {
+            "telegram_id": 1400941708,
+            "username": "@grabthepistol",
+            "minecraft": "StormB99",
+            "faction": "🔵 Синие",
+            "kit": "🚁 Оператор БПЛА",
+            "banned": false,
+            "mirror_msg": 112
+        },
+        {
+            "telegram_id": 1813392185,
+            "username": "@Sergei_Kantos",
+            "minecraft": "coolcant",
+            "faction": "🔵 Синие",
+            "kit": "🪖 Воин",
+            "banned": false,
+            "mirror_msg": 113
+        },
+        {
+            "telegram_id": 6843014383,
+            "username": "@Alasshhik",
+            "minecraft": "Alasshh",
+            "faction": "🔵 Синие",
+            "kit": "🪖 Воин",
+            "banned": false,
+            "mirror_msg": 114
+        },
+        {
+            "telegram_id": 7698640172,
+            "username": "@TamerlanBDc",
+            "minecraft": "TamerlanKumys",
+            "faction": "🔵 Синие",
+            "kit": "🛠 Инженер",
+            "banned": false,
+            "mirror_msg": 115
+        },
+        {
+            "telegram_id": 1945046773,
+            "username": "@Nexlorin",
+            "minecraft": "Nexlorin",
+            "faction": "🔵 Синие",
+            "kit": "🪖 Воин",
+            "banned": false,
+            "mirror_msg": 116
+        },
+        {
+            "telegram_id": 8480261623,
+            "username": "@maleon17",
+            "minecraft": "maleon17",
+            "faction": "🔵 Синие",
+            "kit": "🎯 Снайпер",
+            "banned": false,
+            "mirror_msg": 117
+        },
+        {
+            "telegram_id": 849614175,
+            "username": "@Alekbrooooo",
+            "minecraft": "Alekbro",
+            "faction": "🔵 Синие",
+            "kit": "🎯 Снайпер",
+            "banned": false,
+            "mirror_msg": 118
+        }
+    ]
 }
