@@ -116,6 +116,15 @@
             "kit": "🚁 Оператор БПЛА",
             "banned": false,
             "mirror_msg": 137
+        },
+        {
+            "telegram_id": 6441820355,
+            "username": "@Kaktus_HJG21",
+            "minecraft": "HJG21",
+            "faction": "🔵 Синие",
+            "kit": "🛠 Инженер",
+            "banned": false,
+            "mirror_msg": 138
         }
     ]
 }
