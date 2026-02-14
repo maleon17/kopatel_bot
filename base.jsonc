@@ -125,6 +125,15 @@
             "kit": "🛠 Инженер",
             "banned": false,
             "mirror_msg": 138
+        },
+        {
+            "telegram_id": 5977740562,
+            "username": "@levoph",
+            "minecraft": "take",
+            "faction": "🔴 Красные",
+            "kit": "🎯 Снайпер",
+            "banned": false,
+            "mirror_msg": 139
         }
     ]
 }
