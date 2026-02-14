@@ -748,7 +748,7 @@ def menu_microphone(message):
         return
     
     kb = types.InlineKeyboardMarkup()
-    kb.add(types.InlineKeyboardButton("📖 Инструкция по микрофону", url="https://example.com"))
+    kb.add(types.InlineKeyboardButton("📖 Инструкция по микрофону", url="https://t.me/copalpal/89"))
     bot.send_message(
         message.chat.id,
         "🎤 *Настройка микрофона*\n\n"
