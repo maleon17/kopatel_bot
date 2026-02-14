@@ -17,6 +17,15 @@
             "kit": "🪖 Воин",
             "banned": false,
             "mirror_msg": 120
+        },
+        {
+            "telegram_id": 948444991,
+            "username": "@Caxarocek",
+            "minecraft": "Caxarocek",
+            "faction": "🔴 Красные",
+            "kit": "👨‍⚕️ Медик",
+            "banned": false,
+            "mirror_msg": 121
         }
     ]
 }
