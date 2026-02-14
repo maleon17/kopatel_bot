@@ -794,7 +794,7 @@ def menu_build_setup(message):
         return
     
     kb = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    kb.row("TLauncher", "Prism/FreeSM")
+    kb.row("TLauncher", "Prism/Freesm")
     kb.row("◀️ Назад в сборку")
     bot.send_message(message.chat.id, "⚙️ Выберите ваш лаунчер:", reply_markup=kb)
 
@@ -826,7 +826,7 @@ def menu_prism(message):
     kb.add(types.InlineKeyboardButton("📖 Настройка для Prism/FreeSM", url="https://example.com"))
     bot.send_message(
         message.chat.id,
-        "⚙️ *Настройка сборки для Prism/FreeSM*\n\n"
+        "⚙️ *Настройка сборки для Prism/Freesm*\n\n"
         "Нажмите кнопку ниже для просмотра инструкции:",
         parse_mode="Markdown",
         reply_markup=kb
