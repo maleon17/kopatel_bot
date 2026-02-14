@@ -53,6 +53,15 @@
             "kit": "🎯 Снайпер",
             "banned": false,
             "mirror_msg": 124
+        },
+        {
+            "telegram_id": 6437187512,
+            "username": "@za_garizontom_sobyti",
+            "minecraft": "BIBIDISTRA",
+            "faction": "🔴 Красные",
+            "kit": "🛠 Инженер",
+            "banned": false,
+            "mirror_msg": 128
         }
     ]
 }
