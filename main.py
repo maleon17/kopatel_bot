@@ -823,7 +823,7 @@ def menu_prism(message):
         return
     
     kb = types.InlineKeyboardMarkup()
-    kb.add(types.InlineKeyboardButton("📖 Настройка для Prism/FreeSM", url="https://example.com"))
+    kb.add(types.InlineKeyboardButton("📖 Настройка для Prism/FreeSM", url="https://t.me/copalpal/130?single))
     bot.send_message(
         message.chat.id,
         "⚙️ *Настройка сборки для Prism/Freesm*\n\n"
