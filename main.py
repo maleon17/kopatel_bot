@@ -866,6 +866,12 @@ def menu_back_tools(message):
         return
     menu_tools(message)
 
+@bot.message_handler(func=lambda m: m.text == "◀️ Назад в сборку")
+def menu_back_build(message):
+    if message.chat.type != "private":
+        return
+    menu_build(message)
+
 # ============== ПОДДЕРЖКА ==============
 
 @bot.message_handler(func=lambda m: m.text == "🆘 Поддержка")
