@@ -806,7 +806,7 @@ def menu_tlauncher(message):
         return
     
     kb = types.InlineKeyboardMarkup()
-    kb.add(types.InlineKeyboardButton("📖 Настройка для TLauncher", url="https://example.com"))
+    kb.add(types.InlineKeyboardButton("📖 Настройка для TLauncher", url="https://t.me/copalpal/119?single"))
     bot.send_message(
         message.chat.id,
         "⚙️ *Настройка сборки для TLauncher*\n\n"
