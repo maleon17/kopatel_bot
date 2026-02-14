@@ -152,6 +152,15 @@
             "kit": "🛠 Инженер",
             "banned": false,
             "mirror_msg": 141
+        },
+        {
+            "telegram_id": 5920563277,
+            "username": "@Endi_fox",
+            "minecraft": "Endi_Fox",
+            "faction": "🔵 Синие",
+            "kit": "🚁 Оператор БПЛА",
+            "banned": false,
+            "mirror_msg": 142
         }
     ]
 }
