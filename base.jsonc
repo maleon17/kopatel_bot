@@ -107,6 +107,15 @@
             "kit": "🪖 Воин",
             "banned": false,
             "mirror_msg": 136
+        },
+        {
+            "telegram_id": 8407431583,
+            "username": "@Renaliop",
+            "minecraft": "Vlados0098",
+            "faction": "🔵 Синие",
+            "kit": "🚁 Оператор БПЛА",
+            "banned": false,
+            "mirror_msg": 137
         }
     ]
 }
