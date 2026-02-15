@@ -880,6 +880,38 @@ def menu_support(message):
         return
     bot.send_message(message.chat.id, "🆘 Раздел поддержки в разработке...")
 
+# ---------- ПОДСЧЁТ ФРАКЦИЙ -----------
+
+def get_faction_counts():
+    """Считает количество игроков в каждой фракции"""
+    db = parser.load_db()
+    counts = {}
+    for faction in FACTIONS:
+        counts[faction] = 0
+    
+    for user in db["users"]:
+        if user.get("banned", False):
+            continue
+        faction = user.get("faction")
+        if faction in counts:
+            counts[faction] += 1
+    
+    return counts
+
+def is_faction_available(chosen_faction):
+    """Проверяет можно ли присоединиться к фракции"""
+    counts = get_faction_counts()
+    MAX_DIFFERENCE = 5
+    
+    chosen_count = counts.get(chosen_faction, 0)
+    
+    for faction, count in counts.items():
+        if faction != chosen_faction:
+            # Если выбранная фракция уже больше другой на MAX_DIFFERENCE
+            if chosen_count - count >= MAX_DIFFERENCE:
+                return False
+    
+    return True
 
 # ---------------- flow ----------------
 
@@ -920,6 +952,18 @@ def flow(message):
     if "faction" not in s:
         if message.text not in FACTIONS:
             bot.send_message(message.chat.id, "❌ Выберите фракцию из предложенных кнопок.")
+            return
+
+        # Проверяем баланс фракций
+        if not is_faction_available(message.text):
+            counts = get_faction_counts()
+            counts_text = "\n".join([f"  {f}: {c} чел." for f, c in counts.items()])
+            bot.send_message(
+                message.chat.id,
+                f"⚠️ Перевес по количеству игроков во фракции!\n\n"
+                f"📊 Текущий баланс:\n{counts_text}\n\n"
+                f"Выберите другую фракцию."
+            )
             return
 
         s["faction"] = message.text
