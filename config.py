@@ -8,7 +8,9 @@ BOT_TOKEN = "8214138180:AAFMNpZLq_srrSWwJBK-obXWF4ARBaleV_4"
 ADMINS = [
     8480261623, #maleon
     7698640172, #temerlan
-    5456440531  #UlanaFo
+    5456440531, #UlanaFo
+    2091726116, #slastica
+    948444991   #caxarok
 ]
 
 FACTIONS = [
