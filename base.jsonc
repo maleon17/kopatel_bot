@@ -161,6 +161,15 @@
             "kit": "🚁 Оператор БПЛА",
             "banned": false,
             "mirror_msg": 142
+        },
+        {
+            "telegram_id": 1400941708,
+            "username": "@grabthepistol",
+            "minecraft": "StormB99",
+            "faction": "🔵 Синие",
+            "kit": "🚁 Оператор БПЛА",
+            "banned": false,
+            "mirror_msg": 143
         }
     ]
 }
