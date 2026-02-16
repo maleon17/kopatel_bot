@@ -159,6 +159,15 @@ def rcon_kick(nick, reason="Kicked"):
 def rcon_clearsession(nick):
     rcon_queue.put(("clearsession", nick))
 
+def rcon_get_response(command):
+    """Выполняет RCON команду и возвращает ответ"""
+    try:
+        with MCRcon(RCON_HOST, RCON_PASSWORD, port=RCON_PORT) as mcr:
+            return mcr.command(command)
+    except Exception as e:
+        print(f"RCON response error: {e}")
+        return None
+
 # ------------ convert fraction name -----------
 
 def convert_faction(faction_name):
