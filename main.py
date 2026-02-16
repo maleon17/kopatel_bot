@@ -842,7 +842,9 @@ def menu_build_download(message):
     kb = types.InlineKeyboardMarkup()
     kb.row(
         types.InlineKeyboardButton("Google Диск ❌", url="https://example.com"),
-        types.InlineKeyboardButton("Yandex Диск ❌", url="https://example.com"),
+        types.InlineKeyboardButton("Yandex Диск ❌", url="https://example.com")
+    )
+    kb.row(
         types.InlineKeyboardButton("Telegram ✅", url="https://example.com")
     )
     bot.send_message(
