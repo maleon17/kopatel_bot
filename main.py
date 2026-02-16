@@ -778,7 +778,7 @@ def cmd_srvrestart(message):
 
 # ---------------- CUSTOM COMMAND ----------------
 
-@bot.message_handler(commands=["command", "cmd"])
+@bot.message_handler(commands=["cmd"])
 def cmd_custom_command(message):
     if message.from_user.id not in ADMINS:
         bot.reply_to(message, "❌ У вас нет прав для этой команды.")
@@ -1342,7 +1342,7 @@ if __name__ == "__main__":
         telebot.types.BotCommand("op", "Выдать OP"),
         telebot.types.BotCommand("deop", "Забрать OP"),
         telebot.types.BotCommand("sync", "Синхронизация китов"),
-        telebot.types.BotCommand("command", "Команда на сервер"),
+        telebot.types.BotCommand("cmd", "Команда на сервер"),
         telebot.types.BotCommand("srvrestart", "Оповещение о рестарте"),
         telebot.types.BotCommand("restartmirror", "Перезапуск зеркала"),
     ]
