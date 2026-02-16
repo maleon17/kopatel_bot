@@ -188,6 +188,15 @@
             "kit": "🛠 Инженер",
             "banned": false,
             "mirror_msg": 147
+        },
+        {
+            "telegram_id": 6395308901,
+            "username": "@Player228_TV",
+            "minecraft": "Player228_TV",
+            "faction": "🔵 Синие",
+            "kit": "🛠 Инженер",
+            "banned": false,
+            "mirror_msg": 151
         }
     ]
 }
