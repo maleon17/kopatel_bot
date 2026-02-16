@@ -543,7 +543,7 @@ def cmd_restart_mirror(message):
                 deleted_count += 1
             except Exception as e:
                 print(f"Error deleting msg {msg_id}: {e}")
-            time.sleep(0.1)
+            time.sleep(0.5)
 
     bot.send_message(message.chat.id, f"🗑 Удалено сообщений: {deleted_count}\n⏳ Создаю новые...")
 
@@ -572,7 +572,7 @@ def cmd_restart_mirror(message):
             msg = bot.send_message(MIRROR_GROUP, text)
             user["mirror_msg"] = msg.message_id
             created_count += 1
-            time.sleep(0.3)  # задержка чтобы не словить flood limit
+            time.sleep(1)  # задержка чтобы не словить flood limit
 
         except Exception as e:
             print(f"Error creating mirror for {user.get('minecraft', '?')}: {e}")
