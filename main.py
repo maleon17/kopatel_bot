@@ -159,6 +159,52 @@ def rcon_kick(nick, reason="Kicked"):
 def rcon_clearsession(nick):
     rcon_queue.put(("clearsession", nick))
 
+# ------------ convert fraction name -----------
+
+def convert_faction(faction_name):
+    """Конвертирует название фракции в значение для команды"""
+    faction_map = {
+        "🔴 Красные": "red",
+        "🔵 Синие": "blue",
+    }
+    return faction_map.get(faction_name)
+
+def convert_kit(kit_name):
+    """Конвертирует название кита в значение для команды"""
+    kit_map = {
+        "🪖 Воин": "boec",
+        "🎯 Снайпер": "sniper",
+        "🛠 Инженер": "ingener",
+        "🚁 Оператор БПЛА": "operator_bpla",
+        "👨‍⚕️ Медик": "medik",
+    }
+    return kit_map.get(kit_name)
+
+# ------------ faction balance -----------
+
+def get_faction_counts():
+    db = parser.load_db()
+    counts = {}
+    for faction in FACTIONS:
+        counts[faction] = 0
+    for user in db["users"]:
+        if user.get("banned", False):
+            continue
+        faction = user.get("faction")
+        if faction in counts:
+            counts[faction] += 1
+    return counts
+
+def is_faction_available(chosen_faction):
+    counts = get_faction_counts()
+    MAX_DIFFERENCE = 5
+    chosen_count = counts.get(chosen_faction, 0)
+    for faction, count in counts.items():
+        if faction != chosen_faction:
+            if chosen_count - count >= MAX_DIFFERENCE:
+                return False
+    return True
+
 # --------------- START --------------------
 
 @bot.message_handler(commands=["start"])
@@ -375,6 +421,79 @@ def cmd_deluser(message):
         f'🗑 Пользователь <a href="tg://user?id={uid}">{name}</a> полностью удалён.',
         parse_mode="HTML"
     )
+
+# ---------------- ONLINE ----------------
+
+@bot.message_handler(commands=["online"])
+def cmd_online(message):
+    def get_online():
+        try:
+            response = rcon_get_response("list")
+
+            if response is None:
+                bot.send_message(message.chat.id, "🔴 Сервер выключен")
+                return
+
+            if ":" in response:
+                players_part = response.split(":")[-1].strip()
+                if players_part:
+                    online_nicks = [n.strip() for n in players_part.split(",") if n.strip()]
+                else:
+                    online_nicks = []
+            else:
+                online_nicks = []
+
+            if not online_nicks:
+                bot.send_message(message.chat.id, "📡 На сервере никого нет")
+                return
+
+            db = parser.load_db()
+            factions = {}
+            for faction in FACTIONS:
+                factions[faction] = []
+
+            unknown = []
+
+            for nick in online_nicks:
+                found = False
+                for user in db["users"]:
+                    if user.get("minecraft", "").lower() == nick.lower():
+                        faction = user.get("faction", "")
+                        kit = user.get("kit", "—")
+                        if faction in factions:
+                            factions[faction].append(f"{kit} {user['minecraft']}")
+                        else:
+                            unknown.append(nick)
+                        found = True
+                        break
+                if not found:
+                    unknown.append(nick)
+
+            text = f"📡 Онлайн: {len(online_nicks)}\n\n"
+
+            for faction in FACTIONS:
+                players = factions[faction]
+                text += f"{faction}:\n"
+                if players:
+                    for p in players:
+                        text += f"  {p}\n"
+                else:
+                    text += "  Никого\n"
+                text += "\n"
+
+            if unknown:
+                text += "❓ Не в базе:\n"
+                for nick in unknown:
+                    text += f"  {nick}\n"
+
+            bot.send_message(message.chat.id, text)
+
+        except Exception as e:
+            print(f"Online check error: {e}")
+            bot.send_message(message.chat.id, "🔴 Сервер выключен")
+
+    thread = threading.Thread(target=get_online)
+    thread.start()
 
 # ---------------- MIRROR RESTART ----------------
 
@@ -696,27 +815,6 @@ def cmd_custom_command(message):
         )
     
     log(f"Custom command: {final_command} (by {message.from_user.id})")
-
-# ------------ convert fraction name -----------
-
-def convert_faction(faction_name):
-    """Конвертирует название фракции в значение для команды"""
-    faction_map = {
-        "🔴 Красные": "red",
-        "🔵 Синие": "blue",
-    }
-    return faction_map.get(faction_name)
-
-def convert_kit(kit_name):
-    """Конвертирует название кита в значение для команды"""
-    kit_map = {
-        "🪖 Воин": "boec",
-        "🎯 Снайпер": "sniper",
-        "🛠 Инженер": "ingener",
-        "🚁 Оператор БПЛА": "operator_bpla",
-        "👨‍⚕️ Медик": "medik",
-    }
-    return kit_map.get(kit_name)
 
 # ============== ГЛАВНОЕ МЕНЮ ==============
 
