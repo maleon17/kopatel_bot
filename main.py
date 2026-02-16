@@ -160,22 +160,30 @@ def rcon_clearsession(nick):
     rcon_queue.put(("clearsession", nick))
 
 def rcon_get_response(command):
-    """Выполняет RCON команду и возвращает ответ"""
-    result = [None]
+    """Выполняет RCON команду и возвращает ответ через отдельный процесс"""
+    result_queue = multiprocessing.Queue()
     
-    def do_rcon():
+    def worker():
         try:
             with MCRcon(RCON_HOST, RCON_PASSWORD, port=RCON_PORT) as mcr:
-                result[0] = mcr.command(command)
+                resp = mcr.command(command)
+                result_queue.put(resp)
         except Exception as e:
             print(f"RCON response error: {e}")
-            result[0] = None
+            result_queue.put(None)
     
-    thread = threading.Thread(target=do_rcon)
-    thread.start()
-    thread.join(timeout=5)
+    proc = multiprocessing.Process(target=worker)
+    proc.start()
+    proc.join(timeout=5)
     
-    return result[0]
+    if proc.is_alive():
+        proc.kill()
+        return None
+    
+    try:
+        return result_queue.get_nowait()
+    except:
+        return None
 
 # ------------ convert fraction name -----------
 
