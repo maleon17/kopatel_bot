@@ -1299,6 +1299,36 @@ if __name__ == "__main__":
     
     if GITHUB_ENABLED:
         sync_github_to_local()
-    
+
+    # Команды для простых смертных
+    bot.set_my_commands([
+        telebot.types.BotCommand("start", "Регистрация"),
+        telebot.types.BotCommand("online", "Кто на сервере"),
+    ])
+
+    # Команды для админов
+    admin_commands = [
+        telebot.types.BotCommand("start", "Регистрация"),
+        telebot.types.BotCommand("online", "Кто на сервере"),
+        telebot.types.BotCommand("ban", "Забанить игрока"),
+        telebot.types.BotCommand("unban", "Разбанить игрока"),
+        telebot.types.BotCommand("deluser", "Удалить игрока"),
+        telebot.types.BotCommand("op", "Выдать OP"),
+        telebot.types.BotCommand("deop", "Забрать OP"),
+        telebot.types.BotCommand("sync", "Синхронизация китов"),
+        telebot.types.BotCommand("command", "Команда на сервер"),
+        telebot.types.BotCommand("srvrestart", "Оповещение о рестарте"),
+        telebot.types.BotCommand("restartmirror", "Перезапуск зеркала"),
+    ]
+
+    for admin_id in ADMINS:
+        try:
+            bot.set_my_commands(
+                admin_commands,
+                scope=telebot.types.BotCommandScopeChat(admin_id)
+            )
+        except Exception as e:
+            print(f"Error setting admin commands for {admin_id}: {e}")
+            
     print("🤖 BOT STARTED - waiting for messages...")
     bot.infinity_polling()
