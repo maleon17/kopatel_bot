@@ -845,7 +845,7 @@ def menu_build_download(message):
         types.InlineKeyboardButton("Yandex Диск ❌", url="https://example.com")
     )
     kb.row(
-        types.InlineKeyboardButton("Telegram ✅", url="https://example.com")
+        types.InlineKeyboardButton("Telegram ✅", url="https://t.me/copalpal/148")
     )
     bot.send_message(
         message.chat.id,
