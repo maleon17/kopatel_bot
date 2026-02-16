@@ -487,7 +487,7 @@ def cmd_online(message):
                         faction = user.get("faction", "")
                         kit = user.get("kit", "—")
                         if faction in factions:
-                            factions[faction].append(f"{kit} {user['minecraft']}")
+                            factions[faction].append(f"{kit} - {user['minecraft']}")
                         else:
                             unknown.append(nick)
                         found = True
