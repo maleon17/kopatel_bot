@@ -179,6 +179,15 @@
             "kit": "🪖 Воин",
             "banned": false,
             "mirror_msg": 146
+        },
+        {
+            "telegram_id": 6227664546,
+            "username": "@zealots4444",
+            "minecraft": "Zealots4445",
+            "faction": "🔴 Красные",
+            "kit": "🛠 Инженер",
+            "banned": false,
+            "mirror_msg": 147
         }
     ]
 }
