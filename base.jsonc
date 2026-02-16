@@ -197,6 +197,15 @@
             "kit": "🛠 Инженер",
             "banned": false,
             "mirror_msg": 151
+        },
+        {
+            "telegram_id": 1931868273,
+            "username": "@Ne_Varenik02",
+            "minecraft": "Dragon_Neba",
+            "faction": "🔴 Красные",
+            "kit": "🎯 Снайпер",
+            "banned": false,
+            "mirror_msg": 153
         }
     ]
 }
