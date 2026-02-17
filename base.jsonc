@@ -206,6 +206,15 @@
             "kit": "🛠 Инженер",
             "banned": false,
             "mirror_msg": 217
+        },
+        {
+            "telegram_id": 6834000370,
+            "username": "@Ezzzz990",
+            "minecraft": "kiborg1ubica",
+            "faction": "🔴 Красные",
+            "kit": "🛠 Инженер",
+            "banned": false,
+            "mirror_msg": 218
         }
     ]
 }
