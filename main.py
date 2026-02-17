@@ -537,7 +537,7 @@ def cmd_restart_mirror(message):
     deleted_count = 0
     for user in db["users"]:
         msg_id = user.get("mirror_msg")
-        if msg_id:
+        if msg_id and msg_id != "error":
             try:
                 bot.delete_message(MIRROR_GROUP, msg_id)
                 deleted_count += 1
@@ -547,55 +547,97 @@ def cmd_restart_mirror(message):
 
     bot.send_message(message.chat.id, f"🗑 Удалено сообщений: {deleted_count}\n⏳ Создаю новые...")
 
-    # Шаг 2: Отправляем новые сообщения для каждого пользователя
+    # Шаг 2: Отправляем новые сообщения
     created_count = 0
     error_count = 0
 
     for user in db["users"]:
         try:
-            username = user.get("username", "unknown")
-            nick = user.get("minecraft", "—")
-            faction = user.get("faction", "—")
-            kit = user.get("kit", "—")
-            banned = user.get("banned", False)
-            uid = user.get("telegram_id", "—")
-
             text = (
-                f"🆔 {uid}\n"
-                f"🎮 {nick}\n"
-                f"👤 {username}\n"
-                f"🏳 {faction}\n"
-                f"🧰 {kit}\n"
-                f"🚫 banned: {str(banned).lower()}"
+                f"🆔 {user.get('telegram_id', '—')}\n"
+                f"🎮 {user.get('minecraft', '—')}\n"
+                f"👤 {user.get('username', 'unknown')}\n"
+                f"🏳 {user.get('faction', '—')}\n"
+                f"🧰 {user.get('kit', '—')}\n"
+                f"🚫 banned: {str(user.get('banned', False)).lower()}"
             )
 
             msg = bot.send_message(MIRROR_GROUP, text)
             user["mirror_msg"] = msg.message_id
             created_count += 1
-            time.sleep(1)  # задержка чтобы не словить flood limit
+            time.sleep(1.5)
 
         except Exception as e:
             print(f"Error creating mirror for {user.get('minecraft', '?')}: {e}")
+            user["mirror_msg"] = "error"
             error_count += 1
 
-    # Шаг 3: Сохраняем обновлённую базу
+    # Сохраняем
     parser.save_db(db)
-
-    # Синхронизируем с GitHub
     if GITHUB_ENABLED:
         github_save_db(db, message="Restart mirror group")
 
-    bot.send_message(
-        message.chat.id,
-        f"✅ Зеркальная группа перезапущена!\n\n"
-        f"📊 Статистика:\n"
-        f"• Удалено старых: {deleted_count}\n"
-        f"• Создано новых: {created_count}\n"
-        f"• Ошибок: {error_count}\n"
-        f"• Всего в базе: {len(db['users'])}"
-    )
+    # Шаг 3: Retry для ошибок
+    if error_count > 0:
+        bot.send_message(
+            message.chat.id,
+            f"⚠️ {error_count} ошибок. Повторная попытка через 40 секунд..."
+        )
+        time.sleep(40)
 
-    log(f"Mirror restart: {deleted_count} deleted, {created_count} created (by {message.from_user.id})")
+        retry_count = 0
+        retry_errors = 0
+
+        for user in db["users"]:
+            if user.get("mirror_msg") != "error":
+                continue
+
+            try:
+                text = (
+                    f"🆔 {user.get('telegram_id', '—')}\n"
+                    f"🎮 {user.get('minecraft', '—')}\n"
+                    f"👤 {user.get('username', 'unknown')}\n"
+                    f"🏳 {user.get('faction', '—')}\n"
+                    f"🧰 {user.get('kit', '—')}\n"
+                    f"🚫 banned: {str(user.get('banned', False)).lower()}"
+                )
+
+                msg = bot.send_message(MIRROR_GROUP, text)
+                user["mirror_msg"] = msg.message_id
+                retry_count += 1
+                time.sleep(1.5)
+
+            except Exception as e:
+                print(f"Retry error for {user.get('minecraft', '?')}: {e}")
+                user["mirror_msg"] = "error"
+                retry_errors += 1
+
+        parser.save_db(db)
+        if GITHUB_ENABLED:
+            github_save_db(db, message="Restart mirror group (retry)")
+
+        bot.send_message(
+            message.chat.id,
+            f"✅ Зеркальная группа перезапущена!\n\n"
+            f"📊 Статистика:\n"
+            f"• Удалено старых: {deleted_count}\n"
+            f"• Создано: {created_count}\n"
+            f"• Создано (retry): {retry_count}\n"
+            f"• Ошибок осталось: {retry_errors}\n"
+            f"• Всего в базе: {len(db['users'])}"
+        )
+    else:
+        bot.send_message(
+            message.chat.id,
+            f"✅ Зеркальная группа перезапущена!\n\n"
+            f"📊 Статистика:\n"
+            f"• Удалено старых: {deleted_count}\n"
+            f"• Создано новых: {created_count}\n"
+            f"• Ошибок: 0\n"
+            f"• Всего в базе: {len(db['users'])}"
+        )
+
+    log(f"Mirror restart: {deleted_count} deleted, {created_count + retry_count if error_count > 0 else created_count} created (by {message.from_user.id})")
     
 # ---------------- SYNC ----------------
 
