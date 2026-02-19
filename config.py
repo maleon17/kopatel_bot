@@ -1,5 +1,5 @@
 # RCON
-RCON_HOST = "donator2.gamely.pro"
+RCON_HOST = "game11.gamely.pro"
 RCON_PORT = 25144
 RCON_PASSWORD = "govno1488"
 
