@@ -187,7 +187,7 @@
             "faction": "🔵 Синие",
             "kit": "🛠 Инженер",
             "banned": false,
-            "mirror_msg": "error"
+            "mirror_msg": 267
         },
         {
             "telegram_id": 1931868273,
@@ -196,7 +196,7 @@
             "faction": "🔴 Красные",
             "kit": "🎯 Снайпер",
             "banned": false,
-            "mirror_msg": "error"
+            "mirror_msg": 268
         },
         {
             "telegram_id": 5261517335,
@@ -205,7 +205,7 @@
             "faction": "🔵 Синие",
             "kit": "🛠 Инженер",
             "banned": false,
-            "mirror_msg": "error"
+            "mirror_msg": 269
         },
         {
             "telegram_id": 6834000370,
@@ -214,7 +214,7 @@
             "faction": "🔴 Красные",
             "kit": "🛠 Инженер",
             "banned": false,
-            "mirror_msg": "error"
+            "mirror_msg": 270
         },
         {
             "telegram_id": 8329283419,
@@ -223,7 +223,7 @@
             "faction": "🔵 Синие",
             "kit": "🎯 Снайпер",
             "banned": false,
-            "mirror_msg": "error"
+            "mirror_msg": 271
         },
         {
             "telegram_id": 5150380655,
@@ -232,7 +232,7 @@
             "faction": "🔴 Красные",
             "kit": "🪖 Воин",
             "banned": false,
-            "mirror_msg": "error"
+            "mirror_msg": 272
         },
         {
             "telegram_id": 5543157931,
@@ -241,7 +241,7 @@
             "faction": "🔴 Красные",
             "kit": "🎯 Снайпер",
             "banned": false,
-            "mirror_msg": "error"
+            "mirror_msg": 273
         },
         {
             "telegram_id": 5339173346,
@@ -250,7 +250,7 @@
             "faction": "🔴 Красные",
             "kit": "🎯 Снайпер",
             "banned": false,
-            "mirror_msg": "error"
+            "mirror_msg": 274
         }
     ]
 }
