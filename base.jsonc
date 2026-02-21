@@ -224,6 +224,15 @@
             "kit": "🎯 Снайпер",
             "banned": false,
             "mirror_msg": 243
+        },
+        {
+            "telegram_id": 5150380655,
+            "username": "@andreifarmila",
+            "minecraft": "Mimoza1488",
+            "faction": "🔴 Красные",
+            "kit": "🪖 Воин",
+            "banned": false,
+            "mirror_msg": 244
         }
     ]
 }
